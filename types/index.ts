@@ -1,4 +1,4 @@
-export type TransactionType = "income" | "expense";
+export type TransactionType = "income" | "expense" | "transfer";
 
 export type AccountType = "cash" | "savings" | "current" | "other";
 
@@ -39,9 +39,10 @@ export interface Transaction {
   id: string;
   user_id: string;
   account_id: string;
-  category_id: string;
+  category_id?: string | null;
   amount_paise: number;
   type: TransactionType;
+  destination_account_id?: string | null;
   description: string;
   notes?: string;
   transaction_date: string;
@@ -49,6 +50,7 @@ export interface Transaction {
   updated_at: string;
   // Joined relation fields
   account?: Account;
+  destination_account?: Account;
   category?: Category;
 }
 

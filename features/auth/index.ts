@@ -1,3 +1,2 @@
-// Feature module: auth
 export * from "./types";
-
+export * from "./services";
