@@ -4,14 +4,22 @@ import { cn } from "@/lib/utils";
 
 export interface CardProps extends ViewProps {
   children: React.ReactNode;
+  variant?: "default" | "gold" | "dark";
   className?: string;
 }
 
-export function Card({ children, className, ...props }: CardProps) {
+export function Card({ children, variant = "default", className, ...props }: CardProps) {
+  const variantStyles = {
+    default: "bg-white dark:bg-charcoal-900 border border-[#EAEAE5] dark:border-charcoal-800",
+    gold: "bg-[#F6CB68] border border-[#E8BC52]",
+    dark: "bg-[#121214] border border-[#27272a]",
+  }[variant];
+
   return (
     <View
       className={cn(
-        "bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm",
+        "rounded-[26px] p-5 shadow-sm",
+        variantStyles,
         className
       )}
       {...props}
@@ -20,4 +28,5 @@ export function Card({ children, className, ...props }: CardProps) {
     </View>
   );
 }
+
 

@@ -16,10 +16,9 @@ import {
   Wallet,
   Tag,
   AlignLeft,
+  X,
 } from "lucide-react-native";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { Caption } from "@/components/ui/typography";
 import { TransactionType } from "@/types";
 import { useFinanceStore } from "@/store/useFinanceStore";
@@ -115,36 +114,55 @@ export default function NewTransactionScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={["bottom"]}>
+    <SafeAreaView className="flex-1 bg-[#F7F7F5] dark:bg-[#0E0E10]" edges={["top", "bottom"]}>
+      {/* Header */}
+      <View className="px-5 pt-3 pb-2 flex-row items-center justify-between">
+        <View>
+          <Caption>RECORD ENTRY</Caption>
+          <Text className="text-xl font-black text-[#121214] dark:text-[#F4F4F5]">
+            New Transaction
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="w-9 h-9 rounded-full bg-white dark:bg-charcoal-900 border border-[#EAEAE5] items-center justify-center"
+        >
+          <X size={18} color="#121214" />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ padding: 20, paddingBottom: 60 }}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        {/* Type Toggle Tabs with stable native styles */}
-        <View style={{ flexDirection: "row", padding: 5, backgroundColor: "#e2e8f0", borderRadius: 18, marginBottom: 20 }}>
+        {/* Type Toggle Tabs (Pill Controls inspired by screenshot) */}
+        <View style={{ flexDirection: "row", padding: 5, backgroundColor: "#EAEAE5", borderRadius: 9999, marginBottom: 20 }}>
           <TouchableOpacity
             onPress={() => handleTypeChange("expense")}
             style={{
               flex: 1,
-              paddingVertical: 10,
-              borderRadius: 14,
+              paddingVertical: 11,
+              borderRadius: 9999,
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
               gap: 6,
-              backgroundColor: type === "expense" ? "#f43f5e" : "transparent",
+              backgroundColor: type === "expense" ? "#121214" : "transparent",
             }}
           >
             <ArrowUpRight
               size={16}
-              color={type === "expense" ? "#ffffff" : "#64748b"}
+              color={type === "expense" ? "#FFFFFF" : "#71717A"}
+              strokeWidth={2.4}
             />
             <Text
               style={{
                 fontSize: 12,
-                fontWeight: "700",
-                color: type === "expense" ? "#ffffff" : "#475569",
+                fontWeight: "800",
+                color: type === "expense" ? "#FFFFFF" : "#71717A",
               }}
             >
               Expense
@@ -155,24 +173,25 @@ export default function NewTransactionScreen() {
             onPress={() => handleTypeChange("income")}
             style={{
               flex: 1,
-              paddingVertical: 10,
-              borderRadius: 14,
+              paddingVertical: 11,
+              borderRadius: 9999,
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
               gap: 6,
-              backgroundColor: type === "income" ? "#059669" : "transparent",
+              backgroundColor: type === "income" ? "#FFC83B" : "transparent",
             }}
           >
             <ArrowDownLeft
               size={16}
-              color={type === "income" ? "#ffffff" : "#64748b"}
+              color={type === "income" ? "#121214" : "#71717A"}
+              strokeWidth={2.4}
             />
             <Text
               style={{
                 fontSize: 12,
-                fontWeight: "700",
-                color: type === "income" ? "#ffffff" : "#475569",
+                fontWeight: "800",
+                color: type === "income" ? "#121214" : "#71717A",
               }}
             >
               Income
@@ -183,24 +202,25 @@ export default function NewTransactionScreen() {
             onPress={() => handleTypeChange("transfer")}
             style={{
               flex: 1,
-              paddingVertical: 10,
-              borderRadius: 14,
+              paddingVertical: 11,
+              borderRadius: 9999,
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
               gap: 6,
-              backgroundColor: type === "transfer" ? "#2563eb" : "transparent",
+              backgroundColor: type === "transfer" ? "#121214" : "transparent",
             }}
           >
             <ArrowLeftRight
               size={16}
-              color={type === "transfer" ? "#ffffff" : "#64748b"}
+              color={type === "transfer" ? "#FFFFFF" : "#71717A"}
+              strokeWidth={2.4}
             />
             <Text
               style={{
                 fontSize: 12,
-                fontWeight: "700",
-                color: type === "transfer" ? "#ffffff" : "#475569",
+                fontWeight: "800",
+                color: type === "transfer" ? "#FFFFFF" : "#71717A",
               }}
             >
               Transfer
@@ -209,17 +229,17 @@ export default function NewTransactionScreen() {
         </View>
 
         {/* Amount Card with Quick Add */}
-        <Card className="mb-5 items-center py-6">
+        <View className="bg-white dark:bg-charcoal-900 rounded-[28px] p-6 mb-5 items-center border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm">
           <Caption className="text-center mb-1">ENTER AMOUNT (₹)</Caption>
           <View className="flex-row items-center justify-center mb-3">
-            <Text className="text-3xl font-bold text-slate-400 mr-1">₹</Text>
+            <Text className="text-3xl font-black text-[#A1A1AA] mr-1">₹</Text>
             <Input
               value={amountStr}
               onChangeText={setAmountStr}
               placeholder="0.00"
               keyboardType="numeric"
-              className="text-4xl font-extrabold text-slate-900 dark:text-slate-50 text-center tracking-tight"
-              containerClassName="mb-0 border-0 bg-transparent w-48"
+              className="text-4xl font-black text-[#121214] dark:text-[#F4F4F5] text-center tracking-tight"
+              containerClassName="mb-0 border-0 bg-transparent w-48 shadow-none"
             />
           </View>
 
@@ -229,25 +249,32 @@ export default function NewTransactionScreen() {
               <TouchableOpacity
                 key={val}
                 onPress={() => handleQuickAdd(val)}
-                className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700"
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  backgroundColor: "#F7F7F5",
+                  borderRadius: 9999,
+                  borderWidth: 1,
+                  borderColor: "#EAEAE5",
+                }}
               >
-                <Text className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <Text style={{ fontSize: 11, fontWeight: "800", color: "#121214" }}>
                   +₹{val}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
-        </Card>
+        </View>
 
         {/* Source Account Selection */}
         <View className="mb-5">
-          <View className="flex-row items-center gap-1.5 mb-2">
-            <Wallet size={16} color="#64748b" />
-            <Text className="text-xs font-semibold text-slate-500 uppercase">
-              {type === "transfer" ? "Transfer From" : "Account"}
+          <View className="flex-row items-center gap-1.5 mb-2 px-1">
+            <Wallet size={15} color="#71717A" strokeWidth={2.4} />
+            <Text className="text-xs font-black text-[#121214] dark:text-[#F4F4F5] uppercase tracking-wider">
+              {type === "transfer" ? "Source Account" : "Account"}
             </Text>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2">
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
             {accounts.map((acc) => {
               const isSelected = selectedAccountId === acc.id;
               return (
@@ -256,26 +283,26 @@ export default function NewTransactionScreen() {
                   onPress={() => setSelectedAccountId(acc.id)}
                   style={{
                     paddingHorizontal: 16,
-                    paddingVertical: 12,
-                    borderRadius: 16,
+                    paddingVertical: 10,
+                    borderRadius: 9999,
                     marginRight: 8,
                     flexDirection: "row",
                     alignItems: "center",
                     gap: 8,
-                    backgroundColor: isSelected ? "#0f172a" : "#ffffff",
+                    backgroundColor: isSelected ? "#121214" : "#FFFFFF",
                     borderWidth: 1,
-                    borderColor: isSelected ? "#0f172a" : "#e2e8f0",
+                    borderColor: isSelected ? "#121214" : "#EAEAE5",
                   }}
                 >
                   <CreditCard
-                    size={16}
-                    color={isSelected ? "#10b981" : "#94a3b8"}
+                    size={15}
+                    color={isSelected ? "#FFC83B" : "#71717A"}
                   />
                   <Text
                     style={{
                       fontSize: 12,
-                      fontWeight: "700",
-                      color: isSelected ? "#ffffff" : "#334155",
+                      fontWeight: "800",
+                      color: isSelected ? "#FFFFFF" : "#121214",
                     }}
                   >
                     {acc.name}
@@ -289,13 +316,13 @@ export default function NewTransactionScreen() {
         {/* Destination Account Selection for Transfers */}
         {type === "transfer" && (
           <View className="mb-5">
-            <View className="flex-row items-center gap-1.5 mb-2">
-              <ArrowLeftRight size={16} color="#3b82f6" />
-              <Text className="text-xs font-semibold text-slate-500 uppercase">
-                Transfer To (Destination)
+            <View className="flex-row items-center gap-1.5 mb-2 px-1">
+              <ArrowLeftRight size={15} color="#71717A" strokeWidth={2.4} />
+              <Text className="text-xs font-black text-[#121214] dark:text-[#F4F4F5] uppercase tracking-wider">
+                Destination Account
               </Text>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2">
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
               {accounts.map((acc) => {
                 const isSelected = destinationAccountId === acc.id;
                 return (
@@ -304,26 +331,26 @@ export default function NewTransactionScreen() {
                     onPress={() => setDestinationAccountId(acc.id)}
                     style={{
                       paddingHorizontal: 16,
-                      paddingVertical: 12,
-                      borderRadius: 16,
+                      paddingVertical: 10,
+                      borderRadius: 9999,
                       marginRight: 8,
                       flexDirection: "row",
                       alignItems: "center",
                       gap: 8,
-                      backgroundColor: isSelected ? "#2563eb" : "#ffffff",
+                      backgroundColor: isSelected ? "#FFC83B" : "#FFFFFF",
                       borderWidth: 1,
-                      borderColor: isSelected ? "#2563eb" : "#e2e8f0",
+                      borderColor: isSelected ? "#E8BC52" : "#EAEAE5",
                     }}
                   >
                     <CreditCard
-                      size={16}
-                      color={isSelected ? "#ffffff" : "#94a3b8"}
+                      size={15}
+                      color={isSelected ? "#121214" : "#71717A"}
                     />
                     <Text
                       style={{
                         fontSize: 12,
-                        fontWeight: "700",
-                        color: isSelected ? "#ffffff" : "#334155",
+                        fontWeight: "800",
+                        color: "#121214",
                       }}
                     >
                       {acc.name}
@@ -338,9 +365,11 @@ export default function NewTransactionScreen() {
         {/* Category Selection (Expense / Income) */}
         {type !== "transfer" && (
           <View className="mb-5">
-            <View className="flex-row items-center gap-1.5 mb-2">
-              <Tag size={16} color="#64748b" />
-              <Text className="text-xs font-semibold text-slate-500 uppercase">Category</Text>
+            <View className="flex-row items-center gap-1.5 mb-2 px-1">
+              <Tag size={15} color="#71717A" strokeWidth={2.4} />
+              <Text className="text-xs font-black text-[#121214] dark:text-[#F4F4F5] uppercase tracking-wider">
+                Category
+              </Text>
             </View>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {filteredCategories.map((cat) => {
@@ -351,29 +380,29 @@ export default function NewTransactionScreen() {
                     onPress={() => setSelectedCategoryId(cat.id)}
                     style={{
                       paddingHorizontal: 14,
-                      paddingVertical: 10,
-                      borderRadius: 16,
+                      paddingVertical: 9,
+                      borderRadius: 9999,
                       flexDirection: "row",
                       alignItems: "center",
                       gap: 6,
-                      backgroundColor: isSelected ? "#059669" : "#ffffff",
+                      backgroundColor: isSelected ? "#FFC83B" : "#FFFFFF",
                       borderWidth: 1,
-                      borderColor: isSelected ? "#059669" : "#e2e8f0",
+                      borderColor: isSelected ? "#E8BC52" : "#EAEAE5",
                     }}
                   >
                     <View
                       style={{
-                        width: 8,
-                        height: 8,
+                        width: 7,
+                        height: 7,
                         borderRadius: 4,
-                        backgroundColor: isSelected ? "#ffffff" : cat.color || "#10b981",
+                        backgroundColor: isSelected ? "#121214" : cat.color || "#121214",
                       }}
                     />
                     <Text
                       style={{
                         fontSize: 12,
-                        fontWeight: "600",
-                        color: isSelected ? "#ffffff" : "#334155",
+                        fontWeight: "800",
+                        color: "#121214",
                       }}
                     >
                       {cat.name}
@@ -386,36 +415,52 @@ export default function NewTransactionScreen() {
         )}
 
         {/* Description & Notes */}
-        <Card className="mb-6">
+        <View className="bg-white dark:bg-charcoal-900 rounded-[28px] p-5 mb-6 border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm">
           <Input
             label="Description / Merchant"
-            placeholder="e.g. Salary, Client payment, Grocery"
+            placeholder="e.g. Swiggy, Uber, Client Payment"
             value={description}
             onChangeText={setDescription}
-            leftElement={<AlignLeft size={16} color="#94a3b8" />}
+            leftElement={<AlignLeft size={16} color="#71717A" />}
           />
           <Input
             label="Notes (Optional)"
-            placeholder="Add additional details or reference"
+            placeholder="Reference number or note"
             value={notes}
             onChangeText={setNotes}
             containerClassName="mb-0"
           />
-        </Card>
+        </View>
 
-        {/* Save Button */}
-        <Button
-          title={
-            type === "expense"
+        {/* Save Button (Pill Button) */}
+        <TouchableOpacity
+          onPress={handleSave}
+          style={{
+            backgroundColor: type === "income" ? "#FFC83B" : "#121214",
+            paddingVertical: 16,
+            borderRadius: 9999,
+            alignItems: "center",
+            justifyContent: "center",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.15,
+            shadowRadius: 8,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 15,
+              fontWeight: "900",
+              color: type === "income" ? "#121214" : "#FFFFFF",
+            }}
+          >
+            {type === "expense"
               ? "Record Expense"
               : type === "income"
               ? "Record Income"
-              : "Execute Transfer"
-          }
-          variant={type === "expense" ? "danger" : type === "transfer" ? "secondary" : "primary"}
-          size="lg"
-          onPress={handleSave}
-        />
+              : "Execute Transfer"}
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );

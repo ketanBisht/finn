@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 export interface ButtonProps extends TouchableOpacityProps {
   title: string;
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
+  variant?: "primary" | "gold" | "secondary" | "outline" | "ghost" | "danger";
   size?: "sm" | "md" | "lg";
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
@@ -28,34 +28,36 @@ export function Button({
   className,
   ...props
 }: ButtonProps) {
-  const baseStyles = "flex-row items-center justify-center rounded-2xl";
+  const baseStyles = "flex-row items-center justify-center rounded-full";
 
   const sizeStyles = {
-    sm: "py-2 px-3",
+    sm: "py-2 px-3.5",
     md: "py-3.5 px-5",
     lg: "py-4 px-6",
   }[size];
 
   const variantStyles = {
-    primary: "bg-emerald-600",
-    secondary: "bg-slate-100 dark:bg-slate-800",
-    outline: "border border-slate-300 dark:border-slate-700 bg-transparent",
+    primary: "bg-[#121214]",
+    gold: "bg-[#FFC83B]",
+    secondary: "bg-[#EFEFEA] dark:bg-charcoal-800",
+    outline: "border border-[#DCDCD5] dark:border-charcoal-700 bg-transparent",
     ghost: "bg-transparent",
     danger: "bg-rose-600",
   }[variant];
 
   const textVariantStyles = {
-    primary: "text-white font-semibold",
-    secondary: "text-slate-900 dark:text-slate-100 font-semibold",
-    outline: "text-slate-800 dark:text-slate-200 font-medium",
+    primary: "text-white font-bold",
+    gold: "text-[#121214] font-bold",
+    secondary: "text-[#121214] dark:text-white font-semibold",
+    outline: "text-[#121214] dark:text-white font-semibold",
     ghost: "text-slate-600 dark:text-slate-300 font-medium",
-    danger: "text-white font-semibold",
+    danger: "text-white font-bold",
   }[variant];
 
   const textSizeStyles = {
     sm: "text-xs",
-    md: "text-base",
-    lg: "text-lg",
+    md: "text-sm",
+    lg: "text-base",
   }[size];
 
   const isDisabled = disabled || isLoading;
@@ -77,7 +79,7 @@ export function Button({
       {isLoading ? (
         <ActivityIndicator
           size="small"
-          color={variant === "primary" || variant === "danger" ? "#ffffff" : "#10b981"}
+          color={variant === "gold" ? "#121214" : "#ffffff"}
         />
       ) : (
         <View className="flex-row items-center justify-center gap-2">
@@ -89,4 +91,5 @@ export function Button({
     </TouchableOpacity>
   );
 }
+
 

@@ -16,9 +16,7 @@ import {
   ArrowUpRight,
   ArrowLeftRight,
 } from "lucide-react-native";
-import { Card } from "@/components/ui/card";
 import { Heading, Subheading, Caption, FinancialAmount } from "@/components/ui/typography";
-import { Badge } from "@/components/ui/badge";
 import { useFinanceStore } from "@/store/useFinanceStore";
 import { formatCurrencyFromPaise, formatLocalDate } from "@/lib/utils";
 
@@ -39,7 +37,6 @@ export default function CalendarScreen() {
   const totalDays = lastDayOfMonth.getDate();
 
   // Day of week offset for the 1st day (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
-  // We align Monday = 0, ..., Sunday = 6
   let firstDayIndex = firstDayOfMonth.getDay() - 1;
   if (firstDayIndex === -1) firstDayIndex = 6;
 
@@ -132,87 +129,98 @@ export default function CalendarScreen() {
   });
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-[#F7F7F5] dark:bg-[#0E0E10]" edges={["top"]}>
       {/* Top Header */}
       <View className="px-5 pt-3 pb-2 flex-row items-center justify-between">
         <View>
-          <Caption>CALENDAR VIEW</Caption>
-          <Heading className="text-xl">Daily Activity</Heading>
+          <Caption>CALENDAR AUDIT</Caption>
+          <Text className="text-xl font-black text-[#121214] dark:text-[#F4F4F5]">
+            Daily Activity
+          </Text>
         </View>
+
         <TouchableOpacity
           onPress={() => router.push("/transaction/new")}
-          className="p-2.5 bg-emerald-600 rounded-full flex-row items-center justify-center shadow-sm"
+          className="w-9 h-9 bg-[#FFC83B] rounded-full items-center justify-center border border-[#E8BC52]"
         >
-          <Plus size={18} color="#ffffff" />
+          <Plus size={18} color="#121214" strokeWidth={2.6} />
         </TouchableOpacity>
       </View>
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: 60 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Month Selector Bar */}
-        <View className="flex-row items-center justify-between bg-white dark:bg-slate-900 rounded-2xl p-3 border border-slate-200 dark:border-slate-800 mb-4 shadow-sm">
+        <View className="flex-row items-center justify-between bg-white dark:bg-charcoal-900 rounded-[22px] p-3 border border-[#EAEAE5] dark:border-charcoal-800 mb-4 shadow-sm">
           <TouchableOpacity
             onPress={handlePrevMonth}
-            className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 active:opacity-70"
+            className="w-9 h-9 rounded-full bg-[#F7F7F5] dark:bg-charcoal-800 items-center justify-center"
           >
-            <ChevronLeft size={18} color="#64748b" />
+            <ChevronLeft size={18} color="#121214" strokeWidth={2.5} />
           </TouchableOpacity>
 
           <View className="flex-row items-center gap-2">
-            <CalendarIcon size={16} color="#10b981" />
-            <Text className="text-base font-bold text-slate-800 dark:text-slate-100">
+            <CalendarIcon size={16} color="#121214" strokeWidth={2.4} />
+            <Text className="text-base font-black text-[#121214] dark:text-[#F4F4F5]">
               {monthName}
             </Text>
           </View>
 
           <TouchableOpacity
             onPress={handleNextMonth}
-            className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 active:opacity-70"
+            className="w-9 h-9 rounded-full bg-[#F7F7F5] dark:bg-charcoal-800 items-center justify-center"
           >
-            <ChevronRight size={18} color="#64748b" />
+            <ChevronRight size={18} color="#121214" strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
 
         {/* Monthly Summary Cards */}
         <View className="flex-row gap-2.5 mb-4">
-          <Card className="flex-1 p-3.5 border-rose-100 dark:border-rose-950/40">
-            <Text className="text-xs text-slate-400 font-medium">Month Spent</Text>
+          <View className="flex-1 bg-white dark:bg-charcoal-900 rounded-[22px] p-3.5 border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm">
+            <Text className="text-[11px] text-[#71717A] font-bold uppercase tracking-wider">
+              Spent
+            </Text>
             <FinancialAmount
               amountPaise={monthlyStats.expenseTotal}
               type="expense"
               prefix="₹"
               showDecimals={false}
-              className="text-base font-bold mt-1"
+              className="text-base font-black mt-1"
             />
-          </Card>
-          <Card className="flex-1 p-3.5 border-emerald-100 dark:border-emerald-950/40">
-            <Text className="text-xs text-slate-400 font-medium">Month Earned</Text>
+          </View>
+
+          <View className="flex-1 bg-white dark:bg-charcoal-900 rounded-[22px] p-3.5 border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm">
+            <Text className="text-[11px] text-[#71717A] font-bold uppercase tracking-wider">
+              Earned
+            </Text>
             <FinancialAmount
               amountPaise={monthlyStats.incomeTotal}
               type="income"
               prefix="₹"
               showDecimals={false}
-              className="text-base font-bold mt-1"
+              className="text-base font-black mt-1"
             />
-          </Card>
-          <Card className="flex-1 p-3.5 border-blue-100 dark:border-blue-950/40">
-            <Text className="text-xs text-slate-400 font-medium">Daily Avg</Text>
-            <Text className="text-base font-bold text-slate-800 dark:text-slate-100 mt-1">
+          </View>
+
+          <View className="flex-1 bg-white dark:bg-charcoal-900 rounded-[22px] p-3.5 border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm">
+            <Text className="text-[11px] text-[#71717A] font-bold uppercase tracking-wider">
+              Daily Avg
+            </Text>
+            <Text className="text-base font-black text-[#121214] dark:text-[#F4F4F5] mt-1">
               ₹{Math.round(monthlyStats.dailyAveragePaise / 100).toLocaleString("en-IN")}
             </Text>
-          </Card>
+          </View>
         </View>
 
         {/* Calendar Grid Container */}
-        <Card className="p-4 mb-4">
+        <View className="bg-white dark:bg-charcoal-900 rounded-[28px] p-4 mb-4 border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm">
           {/* Day of Week Labels */}
-          <View className="flex-row justify-between mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">
+          <View className="flex-row justify-between mb-2 border-b border-[#F0EFEA] dark:border-charcoal-800 pb-2">
             {DAYS_OF_WEEK.map((d) => (
               <View key={d} style={{ width: "14.28%", alignItems: "center" }}>
-                <Text className="text-xs font-bold text-slate-400 uppercase">
+                <Text className="text-xs font-black text-[#71717A] uppercase">
                   {d}
                 </Text>
               </View>
@@ -225,7 +233,7 @@ export default function CalendarScreen() {
             {Array.from({ length: firstDayIndex }).map((_, i) => (
               <View
                 key={`blank-${i}`}
-                style={{ width: "14.28%", height: 46 }}
+                style={{ width: "14.28%", height: 44 }}
               />
             ))}
 
@@ -243,7 +251,7 @@ export default function CalendarScreen() {
               return (
                 <View
                   key={`day-wrap-${dayNum}`}
-                  style={{ width: "14.28%", height: 46, padding: 2 }}
+                  style={{ width: "14.28%", height: 44, padding: 2 }}
                 >
                   <TouchableOpacity
                     onPress={() => setSelectedDate(d)}
@@ -253,37 +261,35 @@ export default function CalendarScreen() {
                       justifyContent: "center",
                       borderRadius: 14,
                       backgroundColor: selected
-                        ? "#10b981"
+                        ? "#FFC83B"
                         : today
-                        ? "#ecfdf5"
+                        ? "#F0EFEA"
                         : "transparent",
-                      borderWidth: today && !selected ? 1 : 0,
-                      borderColor: "#10b981",
                     }}
                   >
                     <Text
                       style={{
-                        fontSize: 12,
-                        fontWeight: "700",
+                        fontSize: 13,
+                        fontWeight: selected ? "900" : today ? "800" : "600",
                         color: selected
-                          ? "#ffffff"
+                          ? "#121214"
                           : today
-                          ? "#059669"
-                          : "#334155",
+                          ? "#121214"
+                          : "#475569",
                       }}
                     >
                       {dayNum}
                     </Text>
 
-                    {/* Indicator Dots */}
-                    <View style={{ flexDirection: "row", gap: 2, marginTop: 2, height: 5, alignItems: "center" }}>
+                    {/* Indicator dots */}
+                    <View style={{ flexDirection: "row", gap: 2, marginTop: 2 }}>
                       {hasExpense && (
                         <View
                           style={{
                             width: 4,
                             height: 4,
                             borderRadius: 2,
-                            backgroundColor: selected ? "#ffffff" : "#ef4444",
+                            backgroundColor: selected ? "#121214" : "#EF4444",
                           }}
                         />
                       )}
@@ -293,7 +299,7 @@ export default function CalendarScreen() {
                             width: 4,
                             height: 4,
                             borderRadius: 2,
-                            backgroundColor: selected ? "#ffffff" : "#10b981",
+                            backgroundColor: selected ? "#121214" : "#10B981",
                           }}
                         />
                       )}
@@ -303,82 +309,87 @@ export default function CalendarScreen() {
               );
             })}
           </View>
-        </Card>
+        </View>
 
         {/* Selected Date Details */}
         <View className="mb-4">
-          <View className="flex-row items-center justify-between mb-3">
+          <View className="flex-row items-center justify-between mb-3 px-1">
             <View>
-              <Text className="text-xs text-slate-400 uppercase font-semibold">
-                SELECTED DAY
-              </Text>
-              <Subheading className="text-base">
+              <Text className="text-xs font-black text-[#121214] dark:text-[#F4F4F5] uppercase tracking-wider">
                 {selectedDate.toLocaleDateString("en-IN", {
                   weekday: "short",
                   day: "numeric",
-                  month: "long",
+                  month: "short",
                   year: "numeric",
                 })}
-              </Subheading>
+              </Text>
             </View>
 
-            {selectedDayData.transactions.length > 0 && (
-              <Badge
-                label={`${selectedDayData.transactions.length} record${
-                  selectedDayData.transactions.length > 1 ? "s" : ""
-                }`}
-                variant="default"
-              />
-            )}
+            <View className="flex-row items-center gap-3">
+              {selectedDayData.expensePaise > 0 && (
+                <Text className="text-xs font-black text-rose-600">
+                  -₹{Math.round(selectedDayData.expensePaise / 100).toLocaleString("en-IN")}
+                </Text>
+              )}
+              {selectedDayData.incomePaise > 0 && (
+                <Text className="text-xs font-black text-emerald-600">
+                  +₹{Math.round(selectedDayData.incomePaise / 100).toLocaleString("en-IN")}
+                </Text>
+              )}
+            </View>
           </View>
 
           {selectedDayData.transactions.length === 0 ? (
-            <Card className="items-center py-8">
-              <CalendarIcon size={24} color="#94a3b8" />
-              <Text className="text-xs text-slate-500 mt-2">
-                No financial records on this date
+            <View className="bg-white dark:bg-charcoal-900 rounded-[24px] items-center py-8 border border-[#EAEAE5] dark:border-charcoal-800">
+              <Text className="text-sm font-bold text-[#71717A]">
+                No transactions on this date
               </Text>
               <TouchableOpacity
                 onPress={() => router.push("/transaction/new")}
-                className="mt-3 px-4 py-2 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800 flex-row items-center gap-1.5"
+                className="mt-3 bg-[#121214] px-4 py-2 rounded-full"
               >
-                <Plus size={14} color="#059669" />
-                <Text className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
-                  Add Record for this Day
-                </Text>
+                <Text className="text-white text-xs font-bold">+ Record for Today</Text>
               </TouchableOpacity>
-            </Card>
+            </View>
           ) : (
             selectedDayData.transactions.map((tx) => {
               const isIncome = tx.type === "income";
               const isTransfer = tx.type === "transfer";
+
               return (
-                <Card key={tx.id} className="p-3.5 mb-2 flex-row items-center justify-between">
+                <View
+                  key={tx.id}
+                  className="bg-white dark:bg-charcoal-900 rounded-[22px] p-3.5 mb-2.5 flex-row items-center justify-between border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm"
+                >
                   <View className="flex-row items-center gap-3">
                     <View
-                      className={`w-9 h-9 rounded-xl items-center justify-center ${
-                        isIncome
-                          ? "bg-emerald-100 dark:bg-emerald-950"
+                      style={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: 14,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: isIncome
+                          ? "#E6FBF2"
                           : isTransfer
-                          ? "bg-blue-100 dark:bg-blue-950"
-                          : "bg-rose-100 dark:bg-rose-950"
-                      }`}
+                          ? "#EBF4FF"
+                          : "#FEECEB",
+                      }}
                     >
                       {isIncome ? (
-                        <ArrowDownLeft size={16} color="#10b981" />
+                        <ArrowDownLeft size={16} color="#10B981" />
                       ) : isTransfer ? (
-                        <ArrowLeftRight size={16} color="#3b82f6" />
+                        <ArrowLeftRight size={16} color="#3B82F6" />
                       ) : (
-                        <ArrowUpRight size={16} color="#ef4444" />
+                        <ArrowUpRight size={16} color="#EF4444" />
                       )}
                     </View>
                     <View>
-                      <Text className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                      <Text className="text-sm font-bold text-[#121214] dark:text-[#F4F4F5]">
                         {tx.description}
                       </Text>
-                      <Text className="text-xs text-slate-400">
-                        {tx.account?.name || "Account"} •{" "}
-                        {tx.category?.name || (isTransfer ? "Transfer" : "General")}
+                      <Text className="text-xs text-[#71717A]">
+                        {tx.account?.name || "Account"}
                       </Text>
                     </View>
                   </View>
@@ -387,9 +398,9 @@ export default function CalendarScreen() {
                     amountPaise={tx.amount_paise}
                     type={isIncome ? "income" : isTransfer ? "neutral" : "expense"}
                     prefix={isIncome ? "+" : isTransfer ? "" : "-"}
-                    className="text-sm font-bold"
+                    className="text-sm font-black"
                   />
-                </Card>
+                </View>
               );
             })
           )}

@@ -46,8 +46,7 @@ export default function RootLayout() {
             name="transaction/new"
             options={{
               presentation: "modal",
-              headerShown: true,
-              title: "New Transaction",
+              headerShown: false,
             }}
           />
         </Stack>

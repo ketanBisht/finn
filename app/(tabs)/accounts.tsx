@@ -21,11 +21,8 @@ import {
   CheckCircle2,
   RotateCcw,
 } from "lucide-react-native";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Heading, Subheading, Caption, FinancialAmount } from "@/components/ui/typography";
-import { Badge } from "@/components/ui/badge";
+import { Caption, FinancialAmount } from "@/components/ui/typography";
 import { useFinanceStore } from "@/store/useFinanceStore";
 import { AccountType } from "@/types";
 import { formatCurrencyFromPaise, rupeesToPaise } from "@/lib/utils";
@@ -81,7 +78,39 @@ export default function AccountsScreen() {
     setter(num === 0 ? "" : num.toString());
   };
 
-  const handleResetCounter = () => {
+  // Calculate physical cash total from denominations
+  const totalCashCalculated =
+    (parseInt(notes500) || 0) * 500 +
+    (parseInt(notes200) || 0) * 200 +
+    (parseInt(notes100) || 0) * 100 +
+    (parseInt(notes50) || 0) * 50 +
+    (parseInt(notes20) || 0) * 20 +
+    (parseInt(notes10) || 0) * 10;
+
+  // Find physical cash account if available
+  const cashAccount = accounts.find((a) => a.type === "cash");
+
+  const handleSyncCashAccount = () => {
+    if (!cashAccount) {
+      Alert.alert(
+        "No Cash Account",
+        "Create an account of type 'Cash Wallet' first to sync denominations."
+      );
+      return;
+    }
+
+    updateAccount(cashAccount.id, {
+      current_balance_paise: rupeesToPaise(totalCashCalculated),
+    });
+
+    Alert.alert(
+      "Reconciled!",
+      `Updated ${cashAccount.name} balance to ₹${totalCashCalculated.toLocaleString("en-IN")}`
+    );
+    setCashCounterVisible(false);
+  };
+
+  const resetCounter = () => {
     setNotes500("");
     setNotes200("");
     setNotes100("");
@@ -90,391 +119,385 @@ export default function AccountsScreen() {
     setNotes10("");
   };
 
-  // Calculated physical cash count in rupees
-  const countedCashRupees =
-    (parseInt(notes500) || 0) * 500 +
-    (parseInt(notes200) || 0) * 200 +
-    (parseInt(notes100) || 0) * 100 +
-    (parseInt(notes50) || 0) * 50 +
-    (parseInt(notes20) || 0) * 20 +
-    (parseInt(notes10) || 0) * 10;
-
-  const cashAccount = accounts.find((a) => a.type === "cash");
-  const cashAccountRupees = cashAccount ? cashAccount.current_balance_paise / 100 : 0;
-  const cashDifference = countedCashRupees - cashAccountRupees;
-
-  const handleApplyCashReconciliation = () => {
-    if (!cashAccount) {
-      Alert.alert("No Cash Account", "No cash account found to update.");
-      return;
-    }
-
-    Alert.alert(
-      "Reconcile Cash Balance",
-      `Update your "${cashAccount.name}" balance from ₹${cashAccountRupees} to ₹${countedCashRupees}?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Update Balance",
-          onPress: () => {
-            updateAccount(cashAccount.id, {
-              current_balance_paise: countedCashRupees * 100,
-            });
-            setCashCounterVisible(false);
-          },
-        },
-      ]
-    );
-  };
-
-  const denominationRows = [
-    { denom: 500, val: notes500, set: setNotes500, color: "#64748b" },
-    { denom: 200, val: notes200, set: setNotes200, color: "#f97316" },
-    { denom: 100, val: notes100, set: setNotes100, color: "#6366f1" },
-    { denom: 50, val: notes50, set: setNotes50, color: "#06b6d4" },
-    { denom: 20, val: notes20, set: setNotes20, color: "#84cc16" },
-    { denom: 10, val: notes10, set: setNotes10, color: "#a16207" },
-  ];
-
   return (
-    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={["top"]}>
-      <View className="px-5 pt-3 pb-3 flex-row items-center justify-between">
+    <SafeAreaView className="flex-1 bg-[#F7F7F5] dark:bg-[#0E0E10]" edges={["top"]}>
+      {/* Top Header */}
+      <View className="px-5 pt-3 pb-2 flex-row items-center justify-between">
         <View>
           <Caption>PORTFOLIO</Caption>
-          <Heading className="text-xl">Accounts & Wallets</Heading>
+          <Text className="text-xl font-black text-[#121214] dark:text-[#F4F4F5]">
+            Accounts & Wallets
+          </Text>
         </View>
-        <View className="flex-row items-center gap-2">
-          <TouchableOpacity
-            onPress={() => setCashCounterVisible(true)}
-            className="p-2.5 bg-slate-200 dark:bg-slate-800 rounded-full flex-row items-center justify-center shadow-sm"
-          >
-            <Calculator size={18} color="#059669" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setAccountModalVisible(true)}
-            className="p-2.5 bg-emerald-600 rounded-full flex-row items-center justify-center shadow-sm"
-          >
-            <Plus size={18} color="#ffffff" />
-          </TouchableOpacity>
-        </View>
+
+        <TouchableOpacity
+          onPress={() => setAccountModalVisible(true)}
+          className="w-9 h-9 bg-[#FFC83B] rounded-full items-center justify-center border border-[#E8BC52]"
+        >
+          <Plus size={18} color="#121214" strokeWidth={2.6} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 60 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 110 }}
+        showsVerticalScrollIndicator={false}
       >
-        {/* Total Assets Summary Card */}
-        <View className="bg-slate-900 rounded-3xl p-6 mb-5 border border-slate-800 shadow-xl">
-          <Text className="text-slate-400 text-xs font-semibold tracking-wider uppercase mb-1">
-            Total Liquid Balance
-          </Text>
-          <FinancialAmount
-            amountPaise={totalPaise}
-            prefix="₹"
-            className="text-white text-3xl font-extrabold"
-          />
-          <Text className="text-slate-400 text-xs mt-2">
-            Distributed across {accounts.length} active wallets and bank accounts
-          </Text>
-        </View>
-
-        {/* Cash Count Banner */}
-        <TouchableOpacity
-          onPress={() => setCashCounterVisible(true)}
-          className="bg-emerald-50 dark:bg-emerald-950/40 p-4 rounded-2xl mb-5 border border-emerald-200 dark:border-emerald-800/60 flex-row items-center justify-between shadow-sm active:opacity-90"
+        {/* Warm Golden Portfolio Card */}
+        <View
+          style={{
+            backgroundColor: "#F6CB68",
+            borderRadius: 28,
+            padding: 20,
+            marginBottom: 16,
+            borderWidth: 1,
+            borderColor: "#E8BC52",
+          }}
         >
-          <View className="flex-row items-center gap-3">
-            <View className="p-2.5 bg-emerald-600 rounded-xl">
-              <Calculator size={18} color="#ffffff" />
-            </View>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <View>
-              <Text className="text-xs font-bold text-emerald-950 dark:text-emerald-100">
-                Physical Cash Calculator
+              <Text style={{ fontSize: 11, fontWeight: "800", color: "#121214", opacity: 0.7, textTransform: "uppercase" }}>
+                Total Net Liquidity
               </Text>
-              <Text className="text-xs text-emerald-700 dark:text-emerald-300">
-                Count notes in your physical wallet
+              <Text style={{ fontSize: 24, fontWeight: "900", color: "#121214", marginTop: 2 }}>
+                {formatCurrencyFromPaise(totalPaise)}
+              </Text>
+            </View>
+
+            <View
+              style={{
+                backgroundColor: "#121214",
+                paddingHorizontal: 12,
+                paddingVertical: 5,
+                borderRadius: 9999,
+              }}
+            >
+              <Text style={{ fontSize: 11, fontWeight: "800", color: "#FFFFFF" }}>
+                {accounts.length} Active
               </Text>
             </View>
           </View>
-          <Badge label="Count Now" variant="success" size="sm" />
-        </TouchableOpacity>
+
+          {/* Cash Denomination Quick Pill */}
+          <TouchableOpacity
+            onPress={() => setCashCounterVisible(true)}
+            style={{
+              backgroundColor: "#121214",
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              borderRadius: 9999,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              marginTop: 4,
+            }}
+          >
+            <Calculator size={16} color="#FFC83B" strokeWidth={2.4} />
+            <Text style={{ fontSize: 13, fontWeight: "800", color: "#FFFFFF" }}>
+              Physical Cash Denomination Counter
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Accounts List */}
-        <Subheading className="text-base mb-3">All Accounts</Subheading>
-        {accounts.map((acc) => {
-          const isCash = acc.type === "cash";
-          const isSavings = acc.type === "savings";
+        <View className="mb-4">
+          <Text className="text-xs font-black text-[#121214] dark:text-[#F4F4F5] uppercase tracking-wider mb-3 px-1">
+            Connected Accounts
+          </Text>
 
-          return (
-            <Card key={acc.id} className="p-4 mb-3 flex-row items-center justify-between">
-              <View className="flex-row items-center gap-3.5">
-                <View
-                  className={`w-11 h-11 rounded-2xl items-center justify-center ${
-                    isCash
-                      ? "bg-amber-100 dark:bg-amber-950"
-                      : isSavings
-                      ? "bg-blue-100 dark:bg-blue-950"
-                      : "bg-purple-100 dark:bg-purple-950"
-                  }`}
-                >
-                  {isCash ? (
-                    <Coins size={20} color="#d97706" />
-                  ) : isSavings ? (
-                    <Building2 size={20} color="#2563eb" />
-                  ) : (
-                    <CreditCard size={20} color="#9333ea" />
+          {accounts.map((acc) => {
+            const isCash = acc.type === "cash";
+            const isCurrent = acc.type === "current";
+
+            return (
+              <View
+                key={acc.id}
+                className="bg-white dark:bg-charcoal-900 rounded-[24px] p-4 mb-3 flex-row items-center justify-between border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm"
+              >
+                <View className="flex-row items-center gap-3">
+                  <View
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 16,
+                      backgroundColor: isCash ? "#FFF4D2" : isCurrent ? "#EBF4FF" : "#F7F7F5",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {isCash ? (
+                      <Coins size={20} color="#B45309" />
+                    ) : isCurrent ? (
+                      <CreditCard size={20} color="#2563EB" />
+                    ) : (
+                      <Building2 size={20} color="#121214" />
+                    )}
+                  </View>
+
+                  <View>
+                    <Text className="text-sm font-bold text-[#121214] dark:text-[#F4F4F5]">
+                      {acc.name}
+                    </Text>
+                    <Text className="text-xs text-[#71717A] capitalize">
+                      {acc.type.replace("_", " ")}
+                    </Text>
+                  </View>
+                </View>
+
+                <View className="items-end">
+                  <FinancialAmount
+                    amountPaise={acc.current_balance_paise}
+                    type="neutral"
+                    className="text-base font-black"
+                  />
+                  {isCash && (
+                    <TouchableOpacity
+                      onPress={() => setCashCounterVisible(true)}
+                      className="mt-1"
+                    >
+                      <Text className="text-[11px] font-bold text-[#D97706]">
+                        Reconcile Cash →
+                      </Text>
+                    </TouchableOpacity>
                   )}
                 </View>
-                <View>
-                  <Text className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                    {acc.name}
-                  </Text>
-                  <Text className="text-xs text-slate-400 capitalize mt-0.5">
-                    {acc.type} Account
-                  </Text>
-                </View>
               </View>
-
-              <FinancialAmount
-                amountPaise={acc.current_balance_paise}
-                type="neutral"
-                prefix="₹"
-                className="text-sm font-bold"
-              />
-            </Card>
-          );
-        })}
+            );
+          })}
+        </View>
       </ScrollView>
 
       {/* Add Account Modal */}
-      <Modal visible={accountModalVisible} animationType="slide" transparent>
-        <View className="flex-1 bg-black/60 justify-end">
-          <View className="bg-white dark:bg-slate-900 rounded-t-3xl p-6">
-            <View className="flex-row items-center justify-between mb-4">
-              <Heading className="text-lg">Add New Account</Heading>
-              <TouchableOpacity onPress={() => setAccountModalVisible(false)}>
-                <X size={20} color="#64748b" />
+      <Modal
+        visible={accountModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setAccountModalVisible(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-white dark:bg-charcoal-900 rounded-t-[32px] p-6 pb-10">
+            <View className="flex-row items-center justify-between mb-5">
+              <Text className="text-lg font-black text-[#121214] dark:text-[#F4F4F5]">
+                Add New Account
+              </Text>
+              <TouchableOpacity
+                onPress={() => setAccountModalVisible(false)}
+                className="w-8 h-8 rounded-full bg-[#F7F7F5] items-center justify-center"
+              >
+                <X size={16} color="#121214" />
               </TouchableOpacity>
             </View>
 
             <Input
               label="Account Name"
-              placeholder="e.g. ICICI Bank, Petty Cash, PayTM"
+              placeholder="e.g. HDFC Salary, Cash Wallet"
               value={name}
               onChangeText={setName}
             />
 
-            <Caption className="mb-2">ACCOUNT TYPE</Caption>
+            {/* Type Selector */}
+            <Text className="text-xs font-bold text-[#71717A] uppercase tracking-wider mb-2">
+              Account Type
+            </Text>
             <View className="flex-row gap-2 mb-4">
-              {(["cash", "savings", "current", "other"] as AccountType[]).map((t) => (
-                <TouchableOpacity
-                  key={t}
-                  onPress={() => setType(t)}
-                  className={`flex-1 py-2.5 rounded-xl items-center justify-center border capitalize ${
-                    type === t
-                      ? "bg-emerald-600 border-emerald-600"
-                      : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
-                  }`}
-                >
-                  <Text
-                    className={`text-xs font-bold capitalize ${
-                      type === t ? "text-white" : "text-slate-700 dark:text-slate-300"
-                    }`}
+              {[
+                { id: "savings", label: "Savings / Bank" },
+                { id: "cash", label: "Cash Wallet" },
+                { id: "current", label: "Current / Biz" },
+              ].map((t) => {
+                const isSelected = type === t.id;
+                return (
+                  <TouchableOpacity
+                    key={t.id}
+                    onPress={() => setType(t.id as AccountType)}
+                    style={{
+                      flex: 1,
+                      paddingVertical: 10,
+                      borderRadius: 14,
+                      alignItems: "center",
+                      backgroundColor: isSelected ? "#FFC83B" : "#F7F7F5",
+                      borderWidth: 1,
+                      borderColor: isSelected ? "#E8BC52" : "#EAEAE5",
+                    }}
                   >
-                    {t}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        fontWeight: "800",
+                        color: "#121214",
+                        textAlign: "center",
+                      }}
+                    >
+                      {t.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
 
             <Input
-              label="Opening Balance (₹)"
-              placeholder="0.00"
+              label="Current / Opening Balance (₹)"
+              placeholder="0"
               keyboardType="numeric"
               value={openingBalanceStr}
               onChangeText={setOpeningBalanceStr}
+              containerClassName="mb-6"
             />
 
-            <Button
-              title="Create Account"
-              variant="primary"
+            <TouchableOpacity
               onPress={handleCreateAccount}
-              className="mt-2"
-            />
+              style={{
+                backgroundColor: "#121214",
+                paddingVertical: 14,
+                borderRadius: 9999,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
+                Create Account
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* Physical Cash Denomination Reconciliation Modal */}
-      <Modal visible={cashCounterVisible} animationType="slide" transparent>
-        <View className="flex-1 bg-black/60 justify-end">
-          <View className="bg-white dark:bg-slate-900 rounded-t-3xl p-6 max-h-[90%]">
-            <View className="flex-row items-center justify-between mb-3">
+      {/* Cash Denomination Counter Modal */}
+      <Modal
+        visible={cashCounterVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setCashCounterVisible(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-white dark:bg-charcoal-900 rounded-t-[32px] p-6 pb-10 max-h-[90%]">
+            <View className="flex-row items-center justify-between mb-4">
               <View>
-                <Caption>PHYSICAL RECONCILIATION</Caption>
-                <Heading className="text-lg">Cash Counter</Heading>
-              </View>
-              <View className="flex-row items-center gap-2">
-                <TouchableOpacity
-                  onPress={handleResetCounter}
-                  className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800"
-                >
-                  <RotateCcw size={16} color="#64748b" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => setCashCounterVisible(false)}
-                  className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800"
-                >
-                  <X size={18} color="#64748b" />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Total Counted Banner */}
-            <View className="bg-emerald-600 rounded-2xl p-4 mb-4 shadow-md">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-xs text-emerald-100 font-semibold uppercase tracking-wider">
-                  Total Counted Cash
+                <Text className="text-lg font-black text-[#121214] dark:text-[#F4F4F5]">
+                  Cash Denomination Counter
                 </Text>
-                <Badge
-                  label={cashDifference === 0 ? "Balanced ✓" : cashDifference > 0 ? `+₹${cashDifference}` : `-₹${Math.abs(cashDifference)}`}
-                  variant={cashDifference === 0 ? "success" : cashDifference > 0 ? "warning" : "danger"}
-                  size="sm"
-                  className="bg-white/20 text-white"
-                />
+                <Caption>Count physical Indian Rupee currency notes</Caption>
               </View>
-              <Text className="text-white text-3xl font-extrabold mt-1">₹{countedCashRupees.toLocaleString("en-IN")}</Text>
-              <Text className="text-emerald-100 text-xs mt-1">
-                App Cash Balance: ₹{cashAccountRupees.toLocaleString("en-IN")}
-              </Text>
+              <TouchableOpacity
+                onPress={() => setCashCounterVisible(false)}
+                className="w-8 h-8 rounded-full bg-[#F7F7F5] items-center justify-center"
+              >
+                <X size={16} color="#121214" />
+              </TouchableOpacity>
             </View>
 
-            {/* Denomination Stepper Rows */}
-            <ScrollView showsVerticalScrollIndicator={false} className="mb-2">
-              {denominationRows.map((row) => {
-                const count = parseInt(row.val) || 0;
-                const rowTotal = count * row.denom;
+            {/* Calculated Total Banner */}
+            <View
+              style={{
+                backgroundColor: "#F6CB68",
+                borderRadius: 20,
+                padding: 16,
+                marginBottom: 16,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                borderWidth: 1,
+                borderColor: "#E8BC52",
+              }}
+            >
+              <View>
+                <Text style={{ fontSize: 11, fontWeight: "800", color: "#121214", opacity: 0.7, textTransform: "uppercase" }}>
+                  Physical Cash Total
+                </Text>
+                <Text style={{ fontSize: 22, fontWeight: "900", color: "#121214", marginTop: 2 }}>
+                  ₹{totalCashCalculated.toLocaleString("en-IN")}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                onPress={resetCounter}
+                className="p-2 bg-white rounded-full shadow-sm"
+              >
+                <RotateCcw size={16} color="#121214" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView className="mb-4">
+              {[
+                { denom: 500, val: notes500, set: setNotes500 },
+                { denom: 200, val: notes200, set: setNotes200 },
+                { denom: 100, val: notes100, set: setNotes100 },
+                { denom: 50, val: notes50, set: setNotes50 },
+                { denom: 20, val: notes20, set: setNotes20 },
+                { denom: 10, val: notes10, set: setNotes10 },
+              ].map(({ denom, val, set }) => {
+                const count = parseInt(val) || 0;
+                const subtotal = count * denom;
 
                 return (
                   <View
-                    key={row.denom}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      paddingVertical: 8,
-                      borderBottomWidth: 1,
-                      borderBottomColor: "#f1f5f9",
-                    }}
+                    key={denom}
+                    className="flex-row items-center justify-between py-2 border-b border-[#F0EFEA] dark:border-charcoal-800"
                   >
-                    {/* Denomination Badge */}
-                    <View
-                      style={{
-                        width: 70,
-                        paddingVertical: 6,
-                        paddingHorizontal: 8,
-                        borderRadius: 12,
-                        backgroundColor: "#f8fafc",
-                        borderWidth: 1,
-                        borderColor: "#e2e8f0",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Text style={{ fontSize: 13, fontWeight: "800", color: row.color }}>
-                        ₹{row.denom}
+                    <View className="flex-row items-center gap-2 w-20">
+                      <Text className="text-sm font-black text-[#121214] dark:text-[#F4F4F5]">
+                        ₹{denom}
                       </Text>
                     </View>
 
-                    {/* Stepper with explicit visible TextInput */}
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                    {/* Stepper +/- */}
+                    <View className="flex-row items-center gap-2">
                       <TouchableOpacity
-                        onPress={() => adjustNote(row.val, row.set, -1)}
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 10,
-                          backgroundColor: "#f1f5f9",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
+                        onPress={() => adjustNote(val, set, -1)}
+                        className="w-8 h-8 rounded-full bg-[#F7F7F5] items-center justify-center border border-[#EAEAE5]"
                       >
-                        <Minus size={14} color="#475569" />
+                        <Minus size={14} color="#121214" />
                       </TouchableOpacity>
 
-                      <View
+                      <TextInput
+                        placeholder="0"
+                        keyboardType="numeric"
+                        value={val}
+                        onChangeText={set}
+                        placeholderTextColor="#A1A1AA"
                         style={{
-                          width: 52,
+                          width: 48,
                           height: 36,
+                          textAlign: "center",
+                          fontSize: 14,
+                          fontWeight: "800",
+                          color: "#121214",
+                          backgroundColor: "#F7F7F5",
                           borderRadius: 10,
-                          borderWidth: 1.5,
-                          borderColor: count > 0 ? "#10b981" : "#cbd5e1",
-                          backgroundColor: "#ffffff",
-                          justifyContent: "center",
                         }}
-                      >
-                        <TextInput
-                          value={row.val}
-                          onChangeText={(text) => row.set(text.replace(/[^0-9]/g, ""))}
-                          placeholder="0"
-                          placeholderTextColor="#94a3b8"
-                          keyboardType="number-pad"
-                          style={{
-                            fontSize: 15,
-                            fontWeight: "800",
-                            color: "#0f172a", // Explicit high-contrast text color
-                            textAlign: "center",
-                            padding: 0,
-                          }}
-                        />
-                      </View>
+                      />
 
                       <TouchableOpacity
-                        onPress={() => adjustNote(row.val, row.set, 1)}
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 10,
-                          backgroundColor: "#10b981",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
+                        onPress={() => adjustNote(val, set, 1)}
+                        className="w-8 h-8 rounded-full bg-[#FFC83B] items-center justify-center border border-[#E8BC52]"
                       >
-                        <Plus size={14} color="#ffffff" />
+                        <Plus size={14} color="#121214" />
                       </TouchableOpacity>
                     </View>
 
-                    {/* Subtotal */}
-                    <View style={{ width: 85, alignItems: "flex-end" }}>
-                      <Text
-                        style={{
-                          fontSize: 13,
-                          fontWeight: "700",
-                          color: count > 0 ? "#0f172a" : "#94a3b8",
-                        }}
-                      >
-                        ₹{rowTotal.toLocaleString("en-IN")}
-                      </Text>
-                    </View>
+                    <Text className="text-sm font-black text-[#121214] dark:text-[#F4F4F5] w-20 text-right">
+                      ₹{subtotal.toLocaleString("en-IN")}
+                    </Text>
                   </View>
                 );
               })}
-
-              {/* Action Buttons */}
-              <View style={{ gap: 10, marginTop: 16, marginBottom: 20 }}>
-                {cashDifference !== 0 && (
-                  <Button
-                    title={`Reconcile Cash to ₹${countedCashRupees.toLocaleString("en-IN")}`}
-                    variant="primary"
-                    onPress={handleApplyCashReconciliation}
-                  />
-                )}
-                <Button
-                  title="Done Counting"
-                  variant={cashDifference === 0 ? "primary" : "outline"}
-                  onPress={() => setCashCounterVisible(false)}
-                />
-              </View>
             </ScrollView>
+
+            <TouchableOpacity
+              onPress={handleSyncCashAccount}
+              style={{
+                backgroundColor: "#121214",
+                paddingVertical: 14,
+                borderRadius: 9999,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
+                Reconcile & Update Cash Account
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>

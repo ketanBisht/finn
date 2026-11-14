@@ -11,16 +11,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Plus,
   Target,
-  AlertCircle,
-  TrendingDown,
   Trash2,
   X,
+  AlertTriangle,
+  TrendingDown,
 } from "lucide-react-native";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Heading, Subheading, Body, Caption } from "@/components/ui/typography";
-import { Badge } from "@/components/ui/badge";
+import { Caption } from "@/components/ui/typography";
 import { useFinanceStore } from "@/store/useFinanceStore";
 import { formatCurrencyFromPaise, rupeesToPaise } from "@/lib/utils";
 
@@ -69,148 +66,285 @@ export default function BudgetsScreen() {
     setModalVisible(false);
   };
 
+  const currentBudgets = budgets.filter(
+    (b) => b.month === currentMonth + 1 && b.year === currentYear
+  );
+
+  const totalBudgetPaise = currentBudgets.reduce(
+    (sum, b) => sum + b.limit_amount_paise,
+    0
+  );
+
+  const totalSpentInBudgetsPaise = currentBudgets.reduce(
+    (sum, b) => sum + (categorySpendingMap[b.category_id] || 0),
+    0
+  );
+
+  const overallPercent =
+    totalBudgetPaise > 0
+      ? Math.min(100, Math.round((totalSpentInBudgetsPaise / totalBudgetPaise) * 100))
+      : 0;
+
   return (
-    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={["top"]}>
-      <View className="px-5 pt-3 pb-3 flex-row items-center justify-between">
+    <SafeAreaView className="flex-1 bg-[#F7F7F5] dark:bg-[#0E0E10]" edges={["top"]}>
+      {/* Top Header */}
+      <View className="px-5 pt-3 pb-2 flex-row items-center justify-between">
         <View>
           <Caption>PLANNING</Caption>
-          <Heading className="text-xl">Monthly Budgets</Heading>
+          <Text className="text-xl font-black text-[#121214] dark:text-[#F4F4F5]">
+            Monthly Budgets
+          </Text>
         </View>
+
         <TouchableOpacity
           onPress={() => setModalVisible(true)}
-          className="p-2.5 bg-emerald-600 rounded-full flex-row items-center justify-center shadow-sm"
+          className="w-9 h-9 bg-[#FFC83B] rounded-full items-center justify-center border border-[#E8BC52]"
         >
-          <Plus size={18} color="#ffffff" />
+          <Plus size={18} color="#121214" strokeWidth={2.6} />
         </TouchableOpacity>
       </View>
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 60 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 110 }}
+        showsVerticalScrollIndicator={false}
       >
-        {budgets.length === 0 ? (
-          <Card className="items-center py-12">
-            <Target size={32} color="#94a3b8" />
-            <Text className="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-2">
-              No budgets configured
-            </Text>
-            <Caption className="text-center mt-1 max-w-[240px]">
-              Set category-wise monthly spending limits to prevent overspending.
-            </Caption>
-            <Button
-              title="Set First Budget"
-              size="sm"
-              className="mt-4"
-              onPress={() => setModalVisible(true)}
+        {/* Warm Golden Overview Card (Matches screenshot's warm featured card) */}
+        <View
+          style={{
+            backgroundColor: "#F6CB68",
+            borderRadius: 28,
+            padding: 20,
+            marginBottom: 16,
+            borderWidth: 1,
+            borderColor: "#E8BC52",
+          }}
+        >
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <View>
+              <Text style={{ fontSize: 11, fontWeight: "800", color: "#121214", opacity: 0.7, textTransform: "uppercase" }}>
+                Active Target
+              </Text>
+              <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214", marginTop: 2 }}>
+                {formatCurrencyFromPaise(totalBudgetPaise)}
+              </Text>
+            </View>
+
+            <View
+              style={{
+                backgroundColor: overallPercent > 90 ? "#EF4444" : "#121214",
+                paddingHorizontal: 12,
+                paddingVertical: 5,
+                borderRadius: 9999,
+              }}
+            >
+              <Text style={{ fontSize: 11, fontWeight: "800", color: "#FFFFFF" }}>
+                {overallPercent}% Used
+              </Text>
+            </View>
+          </View>
+
+          {/* Progress bar */}
+          <View style={{ width: "100%", height: 8, backgroundColor: "rgba(0,0,0,0.1)", borderRadius: 4, overflow: "hidden", marginBottom: 14 }}>
+            <View
+              style={{
+                width: `${overallPercent}%`,
+                height: "100%",
+                backgroundColor: overallPercent > 90 ? "#EF4444" : "#121214",
+                borderRadius: 4,
+              }}
             />
-          </Card>
-        ) : (
-          budgets.map((b) => {
-            const spentPaise = categorySpendingMap[b.category_id] || 0;
-            const remainingPaise = b.limit_amount_paise - spentPaise;
-            const percent = Math.min(100, Math.round((spentPaise / b.limit_amount_paise) * 100));
-            const isOverspent = remainingPaise < 0;
+          </View>
 
-            return (
-              <Card key={b.id} className="p-4 mb-3.5">
-                <View className="flex-row items-center justify-between mb-2">
-                  <View className="flex-row items-center gap-2">
+          {/* Bottom Metric Pills */}
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: "#FFFFFF",
+                borderRadius: 16,
+                paddingVertical: 8,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ fontSize: 10, fontWeight: "700", color: "#71717A" }}>Spent</Text>
+              <Text style={{ fontSize: 13, fontWeight: "900", color: "#121214", marginTop: 1 }}>
+                {formatCurrencyFromPaise(totalSpentInBudgetsPaise)}
+              </Text>
+            </View>
+
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: "#FFFFFF",
+                borderRadius: 16,
+                paddingVertical: 8,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ fontSize: 10, fontWeight: "700", color: "#71717A" }}>Available</Text>
+              <Text style={{ fontSize: 13, fontWeight: "900", color: "#121214", marginTop: 1 }}>
+                {formatCurrencyFromPaise(Math.max(0, totalBudgetPaise - totalSpentInBudgetsPaise))}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Budgets List */}
+        <View className="mb-4">
+          <Text className="text-xs font-black text-[#121214] dark:text-[#F4F4F5] uppercase tracking-wider mb-3 px-1">
+            Category Allocations
+          </Text>
+
+          {currentBudgets.length === 0 ? (
+            <View className="bg-white dark:bg-charcoal-900 rounded-[24px] items-center py-10 border border-[#EAEAE5] dark:border-charcoal-800">
+              <Target size={32} color="#A1A1AA" />
+              <Text className="text-sm font-bold text-[#121214] dark:text-[#F4F4F5] mt-3">
+                No Budgets Configured
+              </Text>
+              <Caption className="text-center mt-1 mb-4">
+                Set monthly spending limits for categories like Food, Fuel, etc.
+              </Caption>
+              <TouchableOpacity
+                onPress={() => setModalVisible(true)}
+                style={{
+                  backgroundColor: "#FFC83B",
+                  paddingVertical: 10,
+                  paddingHorizontal: 20,
+                  borderRadius: 9999,
+                }}
+              >
+                <Text style={{ fontSize: 12, fontWeight: "800", color: "#121214" }}>
+                  + Set First Budget
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            currentBudgets.map((b) => {
+              const spent = categorySpendingMap[b.category_id] || 0;
+              const limit = b.limit_amount_paise;
+              const percent = Math.min(100, Math.round((spent / limit) * 100));
+              const isOver = spent > limit;
+
+              return (
+                <View
+                  key={b.id}
+                  className="bg-white dark:bg-charcoal-900 rounded-[24px] p-4 mb-3 border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm"
+                >
+                  <View className="flex-row items-center justify-between mb-2">
+                    <View className="flex-row items-center gap-2">
+                      <View
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: b.category?.color || "#FFC83B" }}
+                      />
+                      <Text className="text-sm font-bold text-[#121214] dark:text-[#F4F4F5]">
+                        {b.category?.name || "Category"}
+                      </Text>
+                    </View>
+
+                    <View className="flex-row items-center gap-2">
+                      <View
+                        style={{
+                          backgroundColor: isOver ? "#FEECEB" : "#F7F7F5",
+                          paddingHorizontal: 8,
+                          paddingVertical: 3,
+                          borderRadius: 9999,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            fontWeight: "800",
+                            color: isOver ? "#EF4444" : "#71717A",
+                          }}
+                        >
+                          {percent}%
+                        </Text>
+                      </View>
+
+                      <TouchableOpacity
+                        onPress={() => deleteBudget(b.id)}
+                        className="p-1 opacity-40 active:opacity-100"
+                      >
+                        <Trash2 size={14} color="#EF4444" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  {/* Progress Bar */}
+                  <View className="w-full bg-[#F0EFEA] dark:bg-charcoal-800 rounded-full h-2 overflow-hidden my-2">
                     <View
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: b.category?.color || "#10b981" }}
+                      className="h-2 rounded-full"
+                      style={{
+                        width: `${percent}%`,
+                        backgroundColor: isOver ? "#EF4444" : b.category?.color || "#121214",
+                      }}
                     />
-                    <Text className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                      {b.category?.name || "Category"}
+                  </View>
+
+                  <View className="flex-row justify-between items-center mt-1">
+                    <Text className="text-xs text-[#71717A]">
+                      Spent: <Text className="font-bold text-[#121214] dark:text-[#F4F4F5]">{formatCurrencyFromPaise(spent)}</Text>
+                    </Text>
+                    <Text className="text-xs text-[#71717A]">
+                      Limit: <Text className="font-bold text-[#121214] dark:text-[#F4F4F5]">{formatCurrencyFromPaise(limit)}</Text>
                     </Text>
                   </View>
-                  <View className="flex-row items-center gap-2">
-                    <Badge
-                      label={isOverspent ? "Overspent!" : `${percent}%`}
-                      variant={isOverspent ? "danger" : percent > 85 ? "warning" : "success"}
-                      size="sm"
-                    />
-                    <TouchableOpacity
-                      onPress={() => deleteBudget(b.id)}
-                      className="p-1"
-                    >
-                      <Trash2 size={14} color="#94a3b8" />
-                    </TouchableOpacity>
-                  </View>
                 </View>
-
-                {/* Progress Bar */}
-                <View className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden my-2">
-                  <View
-                    className={`h-2.5 rounded-full ${
-                      isOverspent
-                        ? "bg-rose-500"
-                        : percent > 85
-                        ? "bg-amber-500"
-                        : "bg-emerald-500"
-                    }`}
-                    style={{ width: `${percent}%` }}
-                  />
-                </View>
-
-                <View className="flex-row justify-between items-center mt-1">
-                  <Text className="text-xs text-slate-500">
-                    Spent: <Text className="font-semibold">{formatCurrencyFromPaise(spentPaise)}</Text>
-                  </Text>
-                  <Text className="text-xs text-slate-500">
-                    Limit: <Text className="font-semibold">{formatCurrencyFromPaise(b.limit_amount_paise)}</Text>
-                  </Text>
-                </View>
-
-                {isOverspent ? (
-                  <View className="flex-row items-center gap-1.5 mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <AlertCircle size={14} color="#ef4444" />
-                    <Text className="text-xs font-semibold text-rose-600">
-                      Exceeded by {formatCurrencyFromPaise(Math.abs(remainingPaise))}
-                    </Text>
-                  </View>
-                ) : (
-                  <View className="flex-row items-center justify-between mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <Text className="text-xs text-slate-400">Remaining to spend</Text>
-                    <Text className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                      {formatCurrencyFromPaise(remainingPaise)}
-                    </Text>
-                  </View>
-                )}
-              </Card>
-            );
-          })
-        )}
+              );
+            })
+          )}
+        </View>
       </ScrollView>
 
-      {/* New Budget Modal */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
-        <View className="flex-1 bg-black/60 justify-end">
-          <View className="bg-white dark:bg-slate-900 rounded-t-3xl p-6">
-            <View className="flex-row items-center justify-between mb-4">
-              <Heading className="text-lg">Set Category Budget</Heading>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <X size={20} color="#64748b" />
+      {/* Add Budget Modal */}
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-white dark:bg-charcoal-900 rounded-t-[32px] p-6 pb-10">
+            <View className="flex-row items-center justify-between mb-5">
+              <Text className="text-lg font-black text-[#121214] dark:text-[#F4F4F5]">
+                Set Category Budget
+              </Text>
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                className="w-8 h-8 rounded-full bg-[#F7F7F5] items-center justify-center"
+              >
+                <X size={16} color="#121214" />
               </TouchableOpacity>
             </View>
 
-            <Caption className="mb-2">SELECT EXPENSE CATEGORY</Caption>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2 mb-4">
+            {/* Category Selector Chips */}
+            <Text className="text-xs font-bold text-[#71717A] uppercase tracking-wider mb-2">
+              Select Category
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row mb-5">
               {expenseCategories.map((c) => {
                 const isSelected = selectedCatId === c.id;
                 return (
                   <TouchableOpacity
                     key={c.id}
                     onPress={() => setSelectedCatId(c.id)}
-                    className={`px-3 py-2 rounded-xl mr-2 border ${
-                      isSelected
-                        ? "bg-emerald-600 border-emerald-600"
-                        : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
-                    }`}
+                    style={{
+                      paddingVertical: 8,
+                      paddingHorizontal: 14,
+                      borderRadius: 9999,
+                      marginRight: 8,
+                      backgroundColor: isSelected ? "#FFC83B" : "#F7F7F5",
+                      borderWidth: 1,
+                      borderColor: isSelected ? "#E8BC52" : "#EAEAE5",
+                    }}
                   >
                     <Text
-                      className={`text-xs font-bold ${
-                        isSelected ? "text-white" : "text-slate-700 dark:text-slate-300"
-                      }`}
+                      style={{
+                        fontSize: 12,
+                        fontWeight: "800",
+                        color: "#121214",
+                      }}
                     >
                       {c.name}
                     </Text>
@@ -220,19 +354,28 @@ export default function BudgetsScreen() {
             </ScrollView>
 
             <Input
-              label="Monthly Limit Amount (₹)"
-              placeholder="e.g. 15000"
+              label="Monthly Limit (₹)"
+              placeholder="e.g. 8000"
               keyboardType="numeric"
               value={limitStr}
               onChangeText={setLimitStr}
+              containerClassName="mb-5"
             />
 
-            <Button
-              title="Save Budget Limit"
-              variant="primary"
+            <TouchableOpacity
               onPress={handleCreateBudget}
-              className="mt-2"
-            />
+              style={{
+                backgroundColor: "#121214",
+                paddingVertical: 14,
+                borderRadius: 9999,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
+                Save Budget
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>

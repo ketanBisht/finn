@@ -11,28 +11,49 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          50: "#ecfdf5",
-          100: "#d1fae5",
-          200: "#a7f3d0",
-          300: "#6ee7b7",
-          400: "#34d399",
-          500: "#10b981",
-          600: "#059669",
-          700: "#047857",
-          800: "#065f46",
-          900: "#064e3b",
+          50: "#fffdf0",
+          100: "#fff9cf",
+          200: "#fff29f",
+          300: "#ffe866",
+          400: "#ffd933",
+          500: "#FFC83B", // Warm Golden Amber
+          600: "#e6b025",
+          700: "#ba8914",
+          800: "#8e650d",
+          900: "#634407",
+        },
+        gold: {
+          light: "#FFF4D2",
+          DEFAULT: "#FFC83B",
+          card: "#F6CB68",
+          dark: "#DDA21B",
+        },
+        charcoal: {
+          50: "#f6f6f6",
+          100: "#e7e7e7",
+          200: "#d1d1d2",
+          300: "#b0b0b2",
+          400: "#88888c",
+          500: "#6d6d71",
+          600: "#57575b",
+          700: "#454548",
+          800: "#27272a",
+          900: "#18181b",
+          950: "#121214", // Deep rich black pill
         },
         surface: {
-          light: "#f8fafc",
-          dark: "#090d16",
+          light: "#F7F7F5", // Warm Sand Light
+          dark: "#0E0E10",
           cardLight: "#ffffff",
-          cardDark: "#131b2e",
-          borderLight: "#e2e8f0",
-          borderDark: "#1e293b",
+          cardDark: "#161618",
+          cardGold: "#F6CB68",
+          borderLight: "#EAEAE5",
+          borderDark: "#27272a",
         },
       },
     },
   },
   plugins: [],
 };
+
 

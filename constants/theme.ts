@@ -1,25 +1,30 @@
 export const COLORS = {
-  primary: "#10b981", // Emerald 500
-  primaryDark: "#059669", // Emerald 600
-  primaryLight: "#d1fae5", // Emerald 100
-  income: "#10b981",
-  expense: "#ef4444",
+  primary: "#FFC83B", // Warm Golden Amber
+  primaryDark: "#121214", // Deep Charcoal / Black
+  primaryLight: "#FFF4D2", // Soft Cream Gold
+  accentGold: "#F6CB68", // Card Gold Accent
+  income: "#10b981", // Emerald Green
+  expense: "#ef4444", // Rose Red
   dark: {
-    bg: "#090d16",
-    card: "#131b2e",
-    border: "#1e293b",
-    text: "#f8fafc",
-    textMuted: "#94a3b8",
+    bg: "#0e0e10",
+    card: "#161618",
+    cardAccent: "#242428",
+    border: "#27272a",
+    text: "#f4f4f5",
+    textMuted: "#a1a1aa",
   },
   light: {
-    bg: "#f8fafc",
+    bg: "#F7F7F5", // Warm Sand / Cream Off-White
     card: "#ffffff",
-    border: "#e2e8f0",
-    text: "#0f172a",
-    textMuted: "#64748b",
+    cardGold: "#FFC83B",
+    cardGoldSoft: "#FFF5D6",
+    border: "#EAEAE5",
+    text: "#121214",
+    textMuted: "#71717A",
   },
 };
 
 export const DEFAULT_CURRENCY = "INR";
 export const DEFAULT_CURRENCY_SYMBOL = "₹";
+
 

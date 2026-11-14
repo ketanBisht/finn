@@ -7,25 +7,33 @@ import {
   PieChart,
   Wallet,
 } from "lucide-react-native";
-import { Platform } from "react-native";
+import { Platform, View } from "react-native";
 
 export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: "#10b981",
-        tabBarInactiveTintColor: "#94a3b8",
+        tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: "#ffffff",
-          borderTopColor: "#e2e8f0",
-          height: Platform.OS === "ios" ? 88 : 64,
-          paddingBottom: Platform.OS === "ios" ? 28 : 10,
-          paddingTop: 8,
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: "600",
+          position: "absolute",
+          bottom: Platform.OS === "ios" ? 28 : 16,
+          left: 20,
+          right: 20,
+          backgroundColor: "#121214",
+          borderRadius: 38,
+          height: 64,
+          borderTopWidth: 0,
+          borderWidth: 1,
+          borderColor: "#27272a",
+          elevation: 12,
+          shadowColor: "#000000",
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.35,
+          shadowRadius: 12,
+          paddingHorizontal: 6,
+          paddingBottom: 0,
+          paddingTop: 0,
         },
       }}
     >
@@ -33,8 +41,23 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: "Dashboard",
-          tabBarIcon: ({ color, size }) => (
-            <LayoutDashboard size={size} color={color} />
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 21,
+                backgroundColor: focused ? "#FFC83B" : "transparent",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <LayoutDashboard
+                size={20}
+                color={focused ? "#121214" : "#A1A1AA"}
+                strokeWidth={focused ? 2.4 : 2}
+              />
+            </View>
           ),
         }}
       />
@@ -42,8 +65,23 @@ export default function TabsLayout() {
         name="calendar"
         options={{
           title: "Calendar",
-          tabBarIcon: ({ color, size }) => (
-            <Calendar size={size} color={color} />
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 21,
+                backgroundColor: focused ? "#FFC83B" : "transparent",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Calendar
+                size={20}
+                color={focused ? "#121214" : "#A1A1AA"}
+                strokeWidth={focused ? 2.4 : 2}
+              />
+            </View>
           ),
         }}
       />
@@ -51,8 +89,23 @@ export default function TabsLayout() {
         name="transactions"
         options={{
           title: "Transactions",
-          tabBarIcon: ({ color, size }) => (
-            <ArrowLeftRight size={size} color={color} />
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 21,
+                backgroundColor: focused ? "#FFC83B" : "transparent",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <ArrowLeftRight
+                size={20}
+                color={focused ? "#121214" : "#A1A1AA"}
+                strokeWidth={focused ? 2.4 : 2}
+              />
+            </View>
           ),
         }}
       />
@@ -60,8 +113,23 @@ export default function TabsLayout() {
         name="budgets"
         options={{
           title: "Budgets",
-          tabBarIcon: ({ color, size }) => (
-            <PieChart size={size} color={color} />
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 21,
+                backgroundColor: focused ? "#FFC83B" : "transparent",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <PieChart
+                size={20}
+                color={focused ? "#121214" : "#A1A1AA"}
+                strokeWidth={focused ? 2.4 : 2}
+              />
+            </View>
           ),
         }}
       />
@@ -69,8 +137,23 @@ export default function TabsLayout() {
         name="accounts"
         options={{
           title: "Accounts",
-          tabBarIcon: ({ color, size }) => (
-            <Wallet size={size} color={color} />
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 21,
+                backgroundColor: focused ? "#FFC83B" : "transparent",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Wallet
+                size={20}
+                color={focused ? "#121214" : "#A1A1AA"}
+                strokeWidth={focused ? 2.4 : 2}
+              />
+            </View>
           ),
         }}
       />
@@ -83,3 +166,4 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
+

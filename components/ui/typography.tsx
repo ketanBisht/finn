@@ -11,7 +11,7 @@ export function Heading({ children, className, ...props }: TypographyProps) {
   return (
     <Text
       className={cn(
-        "text-2xl font-bold text-slate-900 dark:text-slate-50 tracking-tight",
+        "text-2xl font-black text-[#121214] dark:text-[#F4F4F5] tracking-tight",
         className
       )}
       {...props}
@@ -25,7 +25,7 @@ export function Subheading({ children, className, ...props }: TypographyProps) {
   return (
     <Text
       className={cn(
-        "text-lg font-semibold text-slate-800 dark:text-slate-100",
+        "text-lg font-bold text-[#121214] dark:text-[#F4F4F5]",
         className
       )}
       {...props}
@@ -38,7 +38,7 @@ export function Subheading({ children, className, ...props }: TypographyProps) {
 export function Body({ children, className, ...props }: TypographyProps) {
   return (
     <Text
-      className={cn("text-base text-slate-600 dark:text-slate-300", className)}
+      className={cn("text-base text-[#52525B] dark:text-[#A1A1AA]", className)}
       {...props}
     >
       {children}
@@ -49,7 +49,10 @@ export function Body({ children, className, ...props }: TypographyProps) {
 export function Caption({ children, className, ...props }: TypographyProps) {
   return (
     <Text
-      className={cn("text-xs text-slate-400 dark:text-slate-500", className)}
+      className={cn(
+        "text-[11px] font-bold tracking-wider uppercase text-[#71717A] dark:text-[#A1A1AA]",
+        className
+      )}
       {...props}
     >
       {children}
@@ -91,11 +94,11 @@ export function FinancialAmount({
       ? "text-emerald-600 dark:text-emerald-400"
       : type === "expense"
       ? "text-rose-600 dark:text-rose-400"
-      : "text-slate-900 dark:text-slate-50";
+      : "text-[#121214] dark:text-[#F4F4F5]";
 
   return (
     <Text
-      className={cn("font-bold text-base tracking-tight", colorStyle, className)}
+      className={cn("font-black text-base tracking-tight", colorStyle, className)}
       {...props}
     >
       {sign}
@@ -103,4 +106,5 @@ export function FinancialAmount({
     </Text>
   );
 }
+
 
