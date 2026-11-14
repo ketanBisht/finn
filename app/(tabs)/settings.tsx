@@ -26,9 +26,12 @@ import { Caption } from "@/components/ui/typography";
 import { Badge } from "@/components/ui/badge";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { useFinanceStore } from "@/store/useFinanceStore";
+import { WageLogo, WageBadge } from "@/components/ui/wage-logo";
+import { WageLoadingScreen } from "@/components/ui/wage-loading-screen";
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
+  const [showLoadingPreview, setShowLoadingPreview] = useState(false);
   const accounts = useFinanceStore((s) => s.accounts);
   const transactions = useFinanceStore((s) => s.transactions);
   const budgets = useFinanceStore((s) => s.budgets);
@@ -44,7 +47,7 @@ export default function SettingsScreen() {
 
     try {
       await Share.share({
-        title: "Finn Finance Backup",
+        title: "Wage Finance Backup",
         message: JSON.stringify(backupData, null, 2),
       });
     } catch (e: any) {
@@ -87,6 +90,20 @@ export default function SettingsScreen() {
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 36 }}
         showsVerticalScrollIndicator={false}
       >
+        {/* Minimalist Wage Brand Section */}
+        <View className="items-center py-4 mb-2">
+          <WageLogo size={72} />
+          <TouchableOpacity
+            onPress={() => setShowLoadingPreview(true)}
+            activeOpacity={0.7}
+            className="mt-3 px-3.5 py-1.5 rounded-full bg-white border border-[#EAEAE5]"
+          >
+            <Text className="text-xs font-bold text-[#71717A]">
+              Preview Loading Screen
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Backend & Sync Status */}
         <View className="bg-white dark:bg-charcoal-900 rounded-[24px] p-5 mb-4 border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm">
           <View className="flex-row items-center justify-between pb-3.5 border-b border-[#F0EFEA] dark:border-charcoal-800">
@@ -167,11 +184,11 @@ export default function SettingsScreen() {
           <Caption className="mb-2">ABOUT APPLICATION</Caption>
           <View className="flex-row justify-between py-1.5 border-b border-[#F0EFEA] dark:border-charcoal-800">
             <Text className="text-xs text-[#71717A]">App Name</Text>
-            <Text className="text-xs font-black text-[#121214] dark:text-[#F4F4F5]">Finn</Text>
+            <Text className="text-xs font-black text-[#121214] dark:text-[#F4F4F5]">Wage</Text>
           </View>
           <View className="flex-row justify-between py-1.5 border-b border-[#F0EFEA] dark:border-charcoal-800">
             <Text className="text-xs text-[#71717A]">Version</Text>
-            <Text className="text-xs font-black text-[#121214] dark:text-[#F4F4F5]">1.0.0 (Warm Edition)</Text>
+            <Text className="text-xs font-black text-[#121214] dark:text-[#F4F4F5]">1.0.0 (Wage Intelligence)</Text>
           </View>
           <View className="flex-row justify-between py-1.5">
             <Text className="text-xs text-[#71717A]">Design Language</Text>
@@ -179,6 +196,13 @@ export default function SettingsScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {showLoadingPreview && (
+        <WageLoadingScreen
+          minDurationMs={2000}
+          onFinish={() => setShowLoadingPreview(false)}
+        />
+      )}
     </View>
   );
 }

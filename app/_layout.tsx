@@ -1,5 +1,5 @@
 import "../global.css";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -7,10 +7,12 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { queryClient } from "@/lib/query-client";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/useAuthStore";
+import { WageLoadingScreen } from "@/components/ui/wage-loading-screen";
 
 export default function RootLayout() {
   const setSession = useAuthStore((state) => state.setSession);
   const setLoading = useAuthStore((state) => state.setLoading);
+  const [appReady, setAppReady] = useState(false);
 
   useEffect(() => {
     // Initialize Supabase session listener
@@ -56,6 +58,13 @@ export default function RootLayout() {
             }}
           />
         </Stack>
+
+        {!appReady && (
+          <WageLoadingScreen
+            minDurationMs={900}
+            onFinish={() => setAppReady(true)}
+          />
+        )}
       </QueryClientProvider>
     </SafeAreaProvider>
   );

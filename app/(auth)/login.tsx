@@ -4,7 +4,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Input } from "@/components/ui/input";
 import { Caption } from "@/components/ui/typography";
-import { Lock, Mail, Wallet } from "lucide-react-native";
+import { Lock, Mail } from "lucide-react-native";
+import { WageLogo } from "@/components/ui/wage-logo";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -19,11 +20,8 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View className="mb-8 items-center">
-          <View className="w-16 h-16 rounded-[24px] bg-[#FFC83B] items-center justify-center mb-4 shadow-md border border-[#E8BC52]">
-            <Wallet size={28} color="#121214" strokeWidth={2.4} />
-          </View>
-          <Caption>FINN FINANCE</Caption>
-          <Text className="text-3xl font-black text-[#121214] dark:text-[#F4F4F5] mt-1">
+          <WageLogo size={90} style={{ marginBottom: 16 }} />
+          <Text className="text-3xl font-black text-[#121214] dark:text-[#F4F4F5]">
             Welcome back
           </Text>
           <Text className="text-sm font-bold text-[#71717A] mt-1 text-center">

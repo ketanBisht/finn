@@ -35,6 +35,7 @@ import {
 import { Heading, Subheading, Caption, FinancialAmount } from "@/components/ui/typography";
 import { useFinanceStore } from "@/store/useFinanceStore";
 import { formatCurrencyFromPaise, formatLocalDate, rupeesToPaise } from "@/lib/utils";
+import { WageLogo } from "@/components/ui/wage-logo";
 
 // Instant 1-tap template chips
 const QUICK_EXPENSE_TEMPLATES = [
@@ -187,10 +188,8 @@ export default function DashboardScreen() {
           justifyContent: "space-between",
         }}
       >
-        <View className="flex-row items-center gap-3">
-          <View className="w-10 h-10 rounded-full bg-[#121214] items-center justify-center border-2 border-[#FFC83B]">
-            <Text className="text-[#FFC83B] font-black text-sm">KB</Text>
-          </View>
+        <View className="flex-row items-center gap-2.5">
+          <WageLogo size={36} />
           <View>
             <Text className="text-[11px] font-bold text-[#71717A] tracking-wider uppercase">
               {greeting}, Ketan
