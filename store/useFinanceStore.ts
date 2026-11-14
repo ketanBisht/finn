@@ -27,7 +27,7 @@ const initialAccounts: Account[] = [
   {
     id: "acc-1",
     user_id: "local-user",
-    name: "Cash in Hand",
+    name: "Cash Wallet",
     type: "cash",
     opening_balance_paise: 500000, // ₹5,000.00
     current_balance_paise: 1545000, // ₹15,450.00
@@ -39,7 +39,7 @@ const initialAccounts: Account[] = [
   {
     id: "acc-2",
     user_id: "local-user",
-    name: "HDFC Primary Bank",
+    name: "Primary Bank Account",
     type: "savings",
     opening_balance_paise: 20000000, // ₹2,00,000.00
     current_balance_paise: 22955000, // ₹2,29,550.00
@@ -59,6 +59,8 @@ const initialTransactions: Transaction[] = [
     amount_paise: 12000000, // ₹1,20,000
     type: "income",
     description: "Monthly Salary Credit",
+    payment_mode: "netbanking",
+    platform: "Direct Bank Transfer",
     transaction_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -73,6 +75,9 @@ const initialTransactions: Transaction[] = [
     amount_paise: 1850000, // ₹18,500
     type: "expense",
     description: "House Rent & Maintenance",
+    payment_mode: "upi",
+    upi_app: "cred",
+    platform: "CRED",
     transaction_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -87,6 +92,8 @@ const initialTransactions: Transaction[] = [
     amount_paise: 145000, // ₹1,450
     type: "expense",
     description: "Dinner with friends",
+    payment_mode: "cash",
+    platform: "Offline Restaurant",
     transaction_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -100,12 +107,49 @@ const initialTransactions: Transaction[] = [
     category_id: "cat-exp-8", // Groceries
     amount_paise: 382000, // ₹3,820
     type: "expense",
-    description: "Weekly Grocery Restock",
+    description: "Weekly Grocery & Veggies",
+    payment_mode: "upi",
+    upi_app: "gpay",
+    platform: "Blinkit",
     transaction_date: new Date().toISOString(),
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     account: initialAccounts[1],
     category: initialCategories.find((c) => c.name === "Groceries"),
+  },
+  {
+    id: "tx-5",
+    user_id: "local-user",
+    account_id: "acc-2",
+    category_id: "cat-exp-1", // Food
+    amount_paise: 42000, // ₹420
+    type: "expense",
+    description: "Weekend Biryani",
+    payment_mode: "upi",
+    upi_app: "phonepe",
+    platform: "Swiggy",
+    transaction_date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    account: initialAccounts[1],
+    category: initialCategories.find((c) => c.name === "Food"),
+  },
+  {
+    id: "tx-6",
+    user_id: "local-user",
+    account_id: "acc-2",
+    category_id: "cat-exp-2", // Transportation
+    amount_paise: 35000, // ₹350
+    type: "expense",
+    description: "Cab to Office",
+    payment_mode: "upi",
+    upi_app: "paytm",
+    platform: "Uber",
+    transaction_date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    account: initialAccounts[1],
+    category: initialCategories.find((c) => c.name === "Transportation"),
   },
 ];
 
@@ -153,6 +197,8 @@ interface FinanceStoreState {
   categories: Category[];
   transactions: Transaction[];
   budgets: Budget[];
+  customPlatforms: string[];
+  overallMonthlyBudgets: Record<string, number>; // key: `${year}-${month}`, value: limit_amount_paise
 
   // Actions
   addTransaction: (tx: Omit<Transaction, "id" | "created_at" | "updated_at">) => void;
@@ -162,6 +208,9 @@ interface FinanceStoreState {
   deleteAccount: (id: string) => void;
   setBudget: (budget: Omit<Budget, "id" | "created_at" | "updated_at">) => void;
   deleteBudget: (id: string) => void;
+  addPlatform: (name: string) => void;
+  deletePlatform: (name: string) => void;
+  setOverallMonthlyBudget: (month: number, year: number, limit_paise: number) => void;
 }
 
 export const useFinanceStore = create<FinanceStoreState>((set) => ({
@@ -169,6 +218,36 @@ export const useFinanceStore = create<FinanceStoreState>((set) => ({
   categories: initialCategories,
   transactions: initialTransactions,
   budgets: initialBudgets,
+  customPlatforms: ["Swiggy", "Zomato", "Blinkit", "Amazon", "Uber", "In-Store / Offline"],
+  overallMonthlyBudgets: {
+    [`${currentYear}-${currentMonth}`]: 6000000, // ₹60,000 top-down budget
+  },
+
+  addPlatform: (name) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    set((state) => {
+      if (state.customPlatforms.some((p) => p.toLowerCase() === trimmed.toLowerCase())) {
+        return state;
+      }
+      return { customPlatforms: [...state.customPlatforms, trimmed] };
+    });
+  },
+
+  deletePlatform: (name) => {
+    set((state) => ({
+      customPlatforms: state.customPlatforms.filter((p) => p !== name),
+    }));
+  },
+
+  setOverallMonthlyBudget: (month, year, limit_paise) => {
+    set((state) => ({
+      overallMonthlyBudgets: {
+        ...state.overallMonthlyBudgets,
+        [`${year}-${month}`]: limit_paise,
+      },
+    }));
+  },
 
   addTransaction: (newTxData) => {
     set((state) => {

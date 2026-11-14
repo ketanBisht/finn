@@ -1,6 +1,30 @@
 export type TransactionType = "income" | "expense" | "transfer";
 
-export type AccountType = "cash" | "savings" | "current" | "other";
+export type AccountType =
+  | "cash"
+  | "savings"
+  | "current"
+  | "wallet"
+  | "credit_card"
+  | "investment"
+  | "other";
+
+export type PaymentMode =
+  | "upi"
+  | "card"
+  | "netbanking"
+  | "cash"
+  | "wallet"
+  | "other";
+
+export type UPIApp =
+  | "gpay"
+  | "phonepe"
+  | "paytm"
+  | "cred"
+  | "bhim"
+  | "amazon_pay"
+  | "other";
 
 export interface Profile {
   id: string;
@@ -20,6 +44,8 @@ export interface Account {
   current_balance_paise: number;
   currency: string;
   is_active: boolean;
+  institution_name?: string; // e.g. "HDFC", "SBI", "Paytm", "Zerodha"
+  color?: string;
   created_at: string;
   updated_at: string;
 }
@@ -46,6 +72,9 @@ export interface Transaction {
   description: string;
   notes?: string;
   transaction_date: string;
+  payment_mode?: PaymentMode;
+  upi_app?: UPIApp | string | null;
+  platform?: string | null; // e.g. "Swiggy", "Amazon", "Blinkit", "Zomato", "Uber", "CRED"
   created_at: string;
   updated_at: string;
   // Joined relation fields
@@ -61,8 +90,21 @@ export interface Budget {
   month: number; // 1-12
   year: number;
   limit_amount_paise: number;
+  rollover?: boolean;
   created_at: string;
   updated_at: string;
   category?: Category;
 }
+
+export interface MonthlyBudgetGoal {
+  id: string;
+  user_id: string;
+  month: number; // 1-12
+  year: number;
+  overall_budget_paise: number; // The user-given total ceiling
+  created_at: string;
+  updated_at: string;
+}
+
+
 

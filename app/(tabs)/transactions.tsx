@@ -265,6 +265,38 @@ export default function TransactionsScreen() {
                         year: "numeric",
                       })}
                     </Text>
+
+                    {/* Platform & UPI Badges */}
+                    {(tx.platform || tx.upi_app || tx.payment_mode) && (
+                      <View className="flex-row items-center gap-1.5 mt-1 flex-wrap">
+                        {tx.platform ? (
+                          <View className="bg-[#F7F7F5] px-2 py-0.5 rounded-full border border-[#EAEAE5]">
+                            <Text className="text-[10px] font-extrabold text-[#121214]">
+                              {tx.platform}
+                            </Text>
+                          </View>
+                        ) : null}
+
+                        {tx.upi_app ? (
+                          <View className="bg-[#FFF4D2] px-2 py-0.5 rounded-full">
+                            <Text className="text-[10px] font-black text-[#B45309]">
+                              {tx.upi_app === "gpay"
+                                ? "Google Pay"
+                                : tx.upi_app === "phonepe"
+                                ? "PhonePe"
+                                : tx.upi_app.toUpperCase()}
+                            </Text>
+                          </View>
+                        ) : tx.payment_mode ? (
+                          <View className="bg-[#F0EFEA] px-2 py-0.5 rounded-full">
+                            <Text className="text-[10px] font-bold text-[#71717A] capitalize">
+                              {tx.payment_mode}
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
+                    )}
+
                     {tx.notes ? (
                       <Text className="text-[11px] text-[#A1A1AA] italic mt-0.5" numberOfLines={1}>
                         "{tx.notes}"

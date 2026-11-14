@@ -30,6 +30,7 @@ import {
   ChevronRight,
   TrendingDown,
   ShieldCheck,
+  PieChart,
 } from "lucide-react-native";
 import { Heading, Subheading, Caption, FinancialAmount } from "@/components/ui/typography";
 import { useFinanceStore } from "@/store/useFinanceStore";
@@ -53,6 +54,7 @@ export default function DashboardScreen() {
   const budgets = useFinanceStore((s) => s.budgets);
   const categories = useFinanceStore((s) => s.categories);
   const addTransaction = useFinanceStore((s) => s.addTransaction);
+  const overallMonthlyBudgets = useFinanceStore((s) => s.overallMonthlyBudgets);
 
   // 1. Total Net Balance across all accounts
   const totalBalancePaise = accounts.reduce(
@@ -90,9 +92,12 @@ export default function DashboardScreen() {
   const netSavingsPaise = Math.max(0, monthlyIncomePaise - monthlyExpensesPaise);
 
   // 3. Budgets & Daily Safe Pace
-  const totalBudgetPaise = budgets
-    .filter((b) => b.month === currentMonth + 1 && b.year === currentYear)
-    .reduce((sum, b) => sum + b.limit_amount_paise, 0);
+  const monthKey = `${currentYear}-${currentMonth + 1}`;
+  const totalBudgetPaise =
+    overallMonthlyBudgets[monthKey] ??
+    budgets
+      .filter((b) => b.month === currentMonth + 1 && b.year === currentYear)
+      .reduce((sum, b) => sum + b.limit_amount_paise, 0);
 
   const remainingBudgetPaise = Math.max(0, totalBudgetPaise - monthlyExpensesPaise);
   const budgetUtilizationPercent =
@@ -423,9 +428,42 @@ export default function DashboardScreen() {
           </ScrollView>
         </View>
 
+        {/* Spend Intelligence & Analytics Shortcut */}
+        <TouchableOpacity
+          onPress={() => router.push("/analytics")}
+          activeOpacity={0.8}
+          style={{
+            backgroundColor: "#121214",
+            borderRadius: 22,
+            paddingVertical: 12,
+            paddingHorizontal: 16,
+            marginBottom: 16,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <View style={{ width: 34, height: 34, borderRadius: 12, backgroundColor: "#FFC83B", alignItems: "center", justifyContent: "center" }}>
+              <PieChart size={18} color="#121214" />
+            </View>
+            <View>
+              <Text style={{ fontSize: 13, fontWeight: "900", color: "#FFFFFF" }}>
+                Spend Intelligence & UPI Analytics
+              </Text>
+              <Text style={{ fontSize: 10, fontWeight: "700", color: "#A1A1AA" }}>
+                Platform breakdown • UPI vs Cards • Trends
+              </Text>
+            </View>
+          </View>
+          <ChevronRight size={18} color="#FFC83B" />
+        </TouchableOpacity>
+
         {/* Card 2: Proportionate, Sleek Warm Golden Budget Card */}
         {totalBudgetPaise > 0 && (
-          <View
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => router.push("/(tabs)/budgets")}
             style={{
               backgroundColor: "#F6CB68",
               borderRadius: 26,
@@ -439,23 +477,28 @@ export default function DashboardScreen() {
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
               <View>
                 <Text style={{ fontSize: 10, fontWeight: "800", color: "#121214", opacity: 0.7, textTransform: "uppercase" }}>
-                  Monthly Budget
+                  Monthly Budget Ceiling
                 </Text>
                 <Text style={{ fontSize: 14, fontWeight: "900", color: "#121214", marginTop: 1 }}>
                   {now.toLocaleDateString("en-IN", { month: "long", year: "numeric" })}
                 </Text>
               </View>
 
-              <View
-                style={{
-                  backgroundColor: budgetUtilizationPercent > 90 ? "#EF4444" : "#10B981",
-                  paddingHorizontal: 10,
-                  paddingVertical: 4,
-                  borderRadius: 9999,
-                }}
-              >
-                <Text style={{ fontSize: 10, fontWeight: "900", color: "#FFFFFF" }}>
-                  {budgetUtilizationPercent > 90 ? "High Spend" : "On Track"}
+              <View className="flex-row items-center gap-1.5">
+                <View
+                  style={{
+                    backgroundColor: budgetUtilizationPercent > 90 ? "#EF4444" : "#10B981",
+                    paddingHorizontal: 10,
+                    paddingVertical: 4,
+                    borderRadius: 9999,
+                  }}
+                >
+                  <Text style={{ fontSize: 10, fontWeight: "900", color: "#FFFFFF" }}>
+                    {budgetUtilizationPercent > 90 ? "High Spend" : "On Track"}
+                  </Text>
+                </View>
+                <Text style={{ fontSize: 10, fontWeight: "800", color: "#121214", opacity: 0.7 }}>
+                  Reality →
                 </Text>
               </View>
             </View>
@@ -551,7 +594,7 @@ export default function DashboardScreen() {
                 </Text>
               </View>
             </View>
-          </View>
+          </TouchableOpacity>
         )}
 
         {/* 1-Tap Quick Expenses (Faster habit recording) */}

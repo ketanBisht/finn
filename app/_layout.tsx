@@ -49,6 +49,12 @@ export default function RootLayout() {
               headerShown: false,
             }}
           />
+          <Stack.Screen
+            name="analytics/index"
+            options={{
+              headerShown: false,
+            }}
+          />
         </Stack>
       </QueryClientProvider>
     </SafeAreaProvider>
