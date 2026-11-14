@@ -39,6 +39,7 @@ export function Input({
         {leftElement ? <View className="mr-2.5">{leftElement}</View> : null}
         <TextInput
           placeholderTextColor="#94a3b8"
+          style={[{ color: "#0f172a" }, props.style]}
           className={cn(
             "flex-1 text-base text-slate-900 dark:text-slate-100 p-0",
             className
