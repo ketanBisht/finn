@@ -1,6 +1,12 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import { LayoutDashboard, ArrowLeftRight, PieChart, Wallet, Settings } from "lucide-react-native";
+import {
+  LayoutDashboard,
+  Calendar,
+  ArrowLeftRight,
+  PieChart,
+  Wallet,
+} from "lucide-react-native";
 import { Platform } from "react-native";
 
 export default function TabsLayout() {
@@ -29,6 +35,15 @@ export default function TabsLayout() {
           title: "Dashboard",
           tabBarIcon: ({ color, size }) => (
             <LayoutDashboard size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="calendar"
+        options={{
+          title: "Calendar",
+          tabBarIcon: ({ color, size }) => (
+            <Calendar size={size} color={color} />
           ),
         }}
       />
@@ -62,13 +77,9 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Settings",
-          tabBarIcon: ({ color, size }) => (
-            <Settings size={size} color={color} />
-          ),
+          href: null, // Accessible via top settings icon
         }}
       />
     </Tabs>
   );
 }
-

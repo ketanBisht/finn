@@ -28,7 +28,7 @@ export function Button({
   className,
   ...props
 }: ButtonProps) {
-  const baseStyles = "flex-row items-center justify-center rounded-2xl active:opacity-85";
+  const baseStyles = "flex-row items-center justify-center rounded-2xl";
 
   const sizeStyles = {
     sm: "py-2 px-3",
@@ -37,11 +37,11 @@ export function Button({
   }[size];
 
   const variantStyles = {
-    primary: "bg-emerald-600 active:bg-emerald-700",
+    primary: "bg-emerald-600",
     secondary: "bg-slate-100 dark:bg-slate-800",
     outline: "border border-slate-300 dark:border-slate-700 bg-transparent",
     ghost: "bg-transparent",
-    danger: "bg-rose-600 active:bg-rose-700",
+    danger: "bg-rose-600",
   }[variant];
 
   const textVariantStyles = {
@@ -70,6 +70,7 @@ export function Button({
         className
       )}
       disabled={isDisabled}
+      activeOpacity={0.8}
       accessibilityRole="button"
       {...props}
     >

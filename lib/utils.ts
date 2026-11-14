@@ -48,9 +48,19 @@ export function paiseToRupees(paise: number): number {
 }
 
 /**
+ * Format a Date object to YYYY-MM-DD in local time without UTC offset bugs.
+ */
+export function formatLocalDate(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/**
  * Class name utility for combining Tailwind classes safely.
  */
 export function cn(...classes: (string | undefined | null | false)[]): string {
   return classes.filter(Boolean).join(" ");
 }
-

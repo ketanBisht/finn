@@ -58,6 +58,17 @@ export default function NewTransactionScreen() {
     filteredCategories[0]?.id || ""
   );
 
+  // Switch type and reset category to matching list
+  const handleTypeChange = (newType: TransactionType) => {
+    setType(newType);
+    const newFiltered = categories.filter((c) =>
+      newType === "income" ? c.type === "income" : c.type === "expense"
+    );
+    if (newFiltered[0]) {
+      setSelectedCategoryId(newFiltered[0].id);
+    }
+  };
+
   // Quick preset amount additions
   const handleQuickAdd = (add: number) => {
     const current = parseFloat(amountStr) || 0;
@@ -110,60 +121,87 @@ export default function NewTransactionScreen() {
         contentContainerStyle={{ padding: 20, paddingBottom: 60 }}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Type Toggle Tabs */}
-        <View className="flex-row p-1.5 bg-slate-200/80 dark:bg-slate-800 rounded-2xl mb-5">
+        {/* Type Toggle Tabs with stable native styles */}
+        <View style={{ flexDirection: "row", padding: 5, backgroundColor: "#e2e8f0", borderRadius: 18, marginBottom: 20 }}>
           <TouchableOpacity
-            onPress={() => setType("expense")}
-            className={`flex-1 py-2.5 rounded-xl flex-row items-center justify-center gap-1.5 ${
-              type === "expense" ? "bg-rose-500 shadow-sm" : ""
-            }`}
+            onPress={() => handleTypeChange("expense")}
+            style={{
+              flex: 1,
+              paddingVertical: 10,
+              borderRadius: 14,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              backgroundColor: type === "expense" ? "#f43f5e" : "transparent",
+            }}
           >
             <ArrowUpRight
               size={16}
               color={type === "expense" ? "#ffffff" : "#64748b"}
             />
             <Text
-              className={`text-xs font-bold ${
-                type === "expense" ? "text-white" : "text-slate-600 dark:text-slate-400"
-              }`}
+              style={{
+                fontSize: 12,
+                fontWeight: "700",
+                color: type === "expense" ? "#ffffff" : "#475569",
+              }}
             >
               Expense
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => setType("income")}
-            className={`flex-1 py-2.5 rounded-xl flex-row items-center justify-center gap-1.5 ${
-              type === "income" ? "bg-emerald-600 shadow-sm" : ""
-            }`}
+            onPress={() => handleTypeChange("income")}
+            style={{
+              flex: 1,
+              paddingVertical: 10,
+              borderRadius: 14,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              backgroundColor: type === "income" ? "#059669" : "transparent",
+            }}
           >
             <ArrowDownLeft
               size={16}
               color={type === "income" ? "#ffffff" : "#64748b"}
             />
             <Text
-              className={`text-xs font-bold ${
-                type === "income" ? "text-white" : "text-slate-600 dark:text-slate-400"
-              }`}
+              style={{
+                fontSize: 12,
+                fontWeight: "700",
+                color: type === "income" ? "#ffffff" : "#475569",
+              }}
             >
               Income
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => setType("transfer")}
-            className={`flex-1 py-2.5 rounded-xl flex-row items-center justify-center gap-1.5 ${
-              type === "transfer" ? "bg-blue-600 shadow-sm" : ""
-            }`}
+            onPress={() => handleTypeChange("transfer")}
+            style={{
+              flex: 1,
+              paddingVertical: 10,
+              borderRadius: 14,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              backgroundColor: type === "transfer" ? "#2563eb" : "transparent",
+            }}
           >
             <ArrowLeftRight
               size={16}
               color={type === "transfer" ? "#ffffff" : "#64748b"}
             />
             <Text
-              className={`text-xs font-bold ${
-                type === "transfer" ? "text-white" : "text-slate-600 dark:text-slate-400"
-              }`}
+              style={{
+                fontSize: 12,
+                fontWeight: "700",
+                color: type === "transfer" ? "#ffffff" : "#475569",
+              }}
             >
               Transfer
             </Text>
@@ -216,22 +254,29 @@ export default function NewTransactionScreen() {
                 <TouchableOpacity
                   key={acc.id}
                   onPress={() => setSelectedAccountId(acc.id)}
-                  className={`px-4 py-3 rounded-2xl mr-2 flex-row items-center gap-2 border ${
-                    isSelected
-                      ? "bg-slate-900 border-slate-900 dark:bg-slate-100 dark:border-slate-100"
-                      : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-                  }`}
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    borderRadius: 16,
+                    marginRight: 8,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 8,
+                    backgroundColor: isSelected ? "#0f172a" : "#ffffff",
+                    borderWidth: 1,
+                    borderColor: isSelected ? "#0f172a" : "#e2e8f0",
+                  }}
                 >
                   <CreditCard
                     size={16}
                     color={isSelected ? "#10b981" : "#94a3b8"}
                   />
                   <Text
-                    className={`text-xs font-bold ${
-                      isSelected
-                        ? "text-white dark:text-slate-900"
-                        : "text-slate-700 dark:text-slate-300"
-                    }`}
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "700",
+                      color: isSelected ? "#ffffff" : "#334155",
+                    }}
                   >
                     {acc.name}
                   </Text>
@@ -257,20 +302,29 @@ export default function NewTransactionScreen() {
                   <TouchableOpacity
                     key={acc.id}
                     onPress={() => setDestinationAccountId(acc.id)}
-                    className={`px-4 py-3 rounded-2xl mr-2 flex-row items-center gap-2 border ${
-                      isSelected
-                        ? "bg-blue-600 border-blue-600"
-                        : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-                    }`}
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingVertical: 12,
+                      borderRadius: 16,
+                      marginRight: 8,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 8,
+                      backgroundColor: isSelected ? "#2563eb" : "#ffffff",
+                      borderWidth: 1,
+                      borderColor: isSelected ? "#2563eb" : "#e2e8f0",
+                    }}
                   >
                     <CreditCard
                       size={16}
                       color={isSelected ? "#ffffff" : "#94a3b8"}
                     />
                     <Text
-                      className={`text-xs font-bold ${
-                        isSelected ? "text-white" : "text-slate-700 dark:text-slate-300"
-                      }`}
+                      style={{
+                        fontSize: 12,
+                        fontWeight: "700",
+                        color: isSelected ? "#ffffff" : "#334155",
+                      }}
                     >
                       {acc.name}
                     </Text>
@@ -288,27 +342,39 @@ export default function NewTransactionScreen() {
               <Tag size={16} color="#64748b" />
               <Text className="text-xs font-semibold text-slate-500 uppercase">Category</Text>
             </View>
-            <View className="flex-row flex-wrap gap-2">
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {filteredCategories.map((cat) => {
                 const isSelected = selectedCategoryId === cat.id;
                 return (
                   <TouchableOpacity
                     key={cat.id}
                     onPress={() => setSelectedCategoryId(cat.id)}
-                    className={`px-3.5 py-2.5 rounded-2xl flex-row items-center gap-1.5 border ${
-                      isSelected
-                        ? "bg-emerald-600 border-emerald-600"
-                        : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-                    }`}
+                    style={{
+                      paddingHorizontal: 14,
+                      paddingVertical: 10,
+                      borderRadius: 16,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 6,
+                      backgroundColor: isSelected ? "#059669" : "#ffffff",
+                      borderWidth: 1,
+                      borderColor: isSelected ? "#059669" : "#e2e8f0",
+                    }}
                   >
                     <View
-                      className="w-2.5 h-2.5 rounded-full mr-0.5"
-                      style={{ backgroundColor: isSelected ? "#ffffff" : cat.color || "#10b981" }}
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: isSelected ? "#ffffff" : cat.color || "#10b981",
+                      }}
                     />
                     <Text
-                      className={`text-xs font-semibold ${
-                        isSelected ? "text-white" : "text-slate-700 dark:text-slate-300"
-                      }`}
+                      style={{
+                        fontSize: 12,
+                        fontWeight: "600",
+                        color: isSelected ? "#ffffff" : "#334155",
+                      }}
                     >
                       {cat.name}
                     </Text>
@@ -323,7 +389,7 @@ export default function NewTransactionScreen() {
         <Card className="mb-6">
           <Input
             label="Description / Merchant"
-            placeholder="e.g. Grocery, Metro, Salary, Tea"
+            placeholder="e.g. Salary, Client payment, Grocery"
             value={description}
             onChangeText={setDescription}
             leftElement={<AlignLeft size={16} color="#94a3b8" />}
