@@ -6,8 +6,9 @@ import {
   TouchableOpacity,
   Modal,
   Alert,
+  Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Plus,
   Target,
@@ -22,6 +23,7 @@ import { useFinanceStore } from "@/store/useFinanceStore";
 import { formatCurrencyFromPaise, rupeesToPaise } from "@/lib/utils";
 
 export default function BudgetsScreen() {
+  const insets = useSafeAreaInsets();
   const [modalVisible, setModalVisible] = useState(false);
   const [limitStr, setLimitStr] = useState("");
 
@@ -86,12 +88,22 @@ export default function BudgetsScreen() {
       : 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F7F7F5] dark:bg-[#0E0E10]" edges={["top"]}>
-      {/* Top Header */}
-      <View className="px-5 pt-3 pb-2 flex-row items-center justify-between">
+    <View style={{ flex: 1, backgroundColor: "#F7F7F5" }}>
+      {/* Top Header - Guaranteed Notch & Status Bar Clearance */}
+      <View
+        style={{
+          paddingTop: Math.max(insets.top, Platform.OS === "android" ? 44 : 20),
+          paddingHorizontal: 20,
+          paddingBottom: 10,
+          backgroundColor: "#F7F7F5",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
         <View>
           <Caption>PLANNING</Caption>
-          <Text className="text-xl font-black text-[#121214] dark:text-[#F4F4F5]">
+          <Text className="text-xl font-black text-[#121214]">
             Monthly Budgets
           </Text>
         </View>
@@ -106,7 +118,7 @@ export default function BudgetsScreen() {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 110 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Warm Golden Overview Card (Matches screenshot's warm featured card) */}
@@ -379,6 +391,6 @@ export default function BudgetsScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }

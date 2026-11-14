@@ -5,8 +5,9 @@ import {
   Text,
   TouchableOpacity,
   Alert,
+  Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import {
   ArrowUpRight,
@@ -22,13 +23,15 @@ import {
   Utensils,
   ShoppingBag,
   Calendar,
-  Sparkles,
-  Zap,
-  TrendingUp,
+  Fuel,
+  Wallet,
+  Building2,
+  Coins,
+  ChevronRight,
+  TrendingDown,
+  ShieldCheck,
 } from "lucide-react-native";
-import { Card } from "@/components/ui/card";
 import { Heading, Subheading, Caption, FinancialAmount } from "@/components/ui/typography";
-import { Badge } from "@/components/ui/badge";
 import { useFinanceStore } from "@/store/useFinanceStore";
 import { formatCurrencyFromPaise, formatLocalDate, rupeesToPaise } from "@/lib/utils";
 
@@ -37,10 +40,12 @@ const QUICK_EXPENSE_TEMPLATES = [
   { label: "Chai / Tea", amount: 20, icon: Coffee, catName: "Food" },
   { label: "Metro / Auto", amount: 50, icon: Train, catName: "Transportation" },
   { label: "Lunch", amount: 150, icon: Utensils, catName: "Food" },
-  { label: "Snacks", amount: 80, icon: ShoppingBag, catName: "Food" },
+  { label: "Groceries", amount: 500, icon: ShoppingBag, catName: "Groceries" },
+  { label: "Fuel / Petrol", amount: 200, icon: Fuel, catName: "Transportation" },
 ];
 
 export default function DashboardScreen() {
+  const insets = useSafeAreaInsets();
   const [hideBalances, setHideBalances] = useState(false);
 
   const accounts = useFinanceStore((s) => s.accounts);
@@ -59,6 +64,15 @@ export default function DashboardScreen() {
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
+
+  // Dynamic friendly greeting based on time of day
+  const currentHour = now.getHours();
+  const greeting =
+    currentHour < 12
+      ? "Good morning"
+      : currentHour < 17
+      ? "Good afternoon"
+      : "Good evening";
 
   const monthlyTransactions = transactions.filter((t) => {
     const d = new Date(t.transaction_date);
@@ -155,19 +169,33 @@ export default function DashboardScreen() {
   const recentTransactions = transactions.slice(0, 5);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F7F7F5] dark:bg-[#0E0E10]" edges={["top"]}>
-      {/* Top Header - User Avatar & Greetings */}
-      <View className="px-5 pt-3 pb-2 flex-row items-center justify-between">
+    <View style={{ flex: 1, backgroundColor: "#F7F7F5" }}>
+      {/* Top Header - Guaranteed Notch & Status Bar Clearance */}
+      <View
+        style={{
+          paddingTop: Math.max(insets.top, Platform.OS === "android" ? 44 : 20),
+          paddingHorizontal: 20,
+          paddingBottom: 10,
+          backgroundColor: "#F7F7F5",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
         <View className="flex-row items-center gap-3">
           <View className="w-10 h-10 rounded-full bg-[#121214] items-center justify-center border-2 border-[#FFC83B]">
             <Text className="text-[#FFC83B] font-black text-sm">KB</Text>
           </View>
           <View>
-            <Text className="text-xs font-bold text-[#71717A] tracking-wider uppercase">
-              Hey, Ketan
+            <Text className="text-[11px] font-bold text-[#71717A] tracking-wider uppercase">
+              {greeting}, Ketan
             </Text>
-            <Text className="text-base font-black text-[#121214] dark:text-[#F4F4F5]">
-              Finn Cockpit
+            <Text className="text-base font-black text-[#121214]">
+              {now.toLocaleDateString("en-IN", {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+              })}
             </Text>
           </View>
         </View>
@@ -175,119 +203,364 @@ export default function DashboardScreen() {
         <View className="flex-row items-center gap-2">
           <TouchableOpacity
             onPress={() => setHideBalances(!hideBalances)}
-            className="w-10 h-10 bg-white dark:bg-charcoal-900 rounded-full items-center justify-center border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm"
+            className="w-10 h-10 bg-white rounded-full items-center justify-center border border-[#EAEAE5] shadow-sm"
           >
             {hideBalances ? (
-              <EyeOff size={16} color="#71717A" />
+              <EyeOff size={17} color="#71717A" />
             ) : (
-              <Eye size={16} color="#71717A" />
+              <Eye size={17} color="#71717A" />
             )}
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => router.push("/(tabs)/settings")}
-            className="w-10 h-10 bg-white dark:bg-charcoal-900 rounded-full items-center justify-center border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm"
+            className="w-10 h-10 bg-white rounded-full items-center justify-center border border-[#EAEAE5] shadow-sm"
           >
-            <Settings size={16} color="#71717A" />
+            <Settings size={17} color="#71717A" />
           </TouchableOpacity>
         </View>
       </View>
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: 110 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Card 1: Crisp White Dual Balance Card with Pill Action Buttons */}
-        <View className="bg-white dark:bg-charcoal-900 rounded-[28px] p-5 mb-4 border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm">
-          {/* Two-Column Balances */}
-          <View className="flex-row justify-between items-start mb-5">
-            <View className="flex-1">
-              <Text className="text-[#71717A] text-xs font-bold uppercase tracking-wider mb-1">
-                Current Balance
+        {/* Card 1: Crisp White Balance & Cash Flow Card */}
+        <View className="bg-white rounded-[28px] p-5 mb-4 border border-[#EAEAE5] shadow-sm">
+          {/* Header Row */}
+          <View className="flex-row items-center justify-between mb-1.5">
+            <Text className="text-[#71717A] text-[11px] font-extrabold uppercase tracking-wider">
+              Total Net Worth
+            </Text>
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/accounts")}
+              className="flex-row items-center gap-1.5 bg-[#F7F7F5] px-2.5 py-1 rounded-full border border-[#EAEAE5]"
+            >
+              <View className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <Text className="text-[#121214] text-[11px] font-bold">
+                {accounts.length} Accounts
               </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Main Balance Display */}
+          {hideBalances ? (
+            <Text className="text-[#121214] text-3xl font-black mb-4">₹ ••••••••</Text>
+          ) : (
+            <FinancialAmount
+              amountPaise={totalBalancePaise}
+              type="neutral"
+              prefix="₹"
+              className="text-[#121214] text-3xl font-black mb-4"
+            />
+          )}
+
+          {/* Monthly In / Out / Net Mini-Strip */}
+          <View className="flex-row items-center justify-between py-3 px-3.5 bg-[#F7F7F5] rounded-2xl mb-4 border border-[#EAEAE5]">
+            <View>
+              <View className="flex-row items-center gap-1">
+                <ArrowDownLeft size={13} color="#10B981" strokeWidth={2.4} />
+                <Text className="text-[11px] font-bold text-[#71717A]">Income</Text>
+              </View>
               {hideBalances ? (
-                <Text className="text-[#121214] dark:text-white text-2xl font-black">₹ ••••••••</Text>
+                <Text className="text-[#121214] text-xs font-black mt-0.5">₹ ••••</Text>
               ) : (
                 <FinancialAmount
-                  amountPaise={totalBalancePaise}
-                  type="neutral"
-                  prefix="₹"
-                  className="text-[#121214] dark:text-white text-2xl font-black"
+                  amountPaise={monthlyIncomePaise}
+                  type="income"
+                  showDecimals={false}
+                  className="text-xs font-black mt-0.5"
                 />
               )}
             </View>
 
-            <View className="flex-1 items-end">
-              <Text className="text-[#71717A] text-xs font-bold uppercase tracking-wider mb-1">
-                Monthly Savings
-              </Text>
+            <View className="w-[1px] h-6 bg-[#EAEAE5]" />
+
+            <View>
+              <View className="flex-row items-center gap-1">
+                <ArrowUpRight size={13} color="#EF4444" strokeWidth={2.4} />
+                <Text className="text-[11px] font-bold text-[#71717A]">Expenses</Text>
+              </View>
               {hideBalances ? (
-                <Text className="text-[#121214] dark:text-white text-2xl font-black">₹ ••••</Text>
+                <Text className="text-[#121214] text-xs font-black mt-0.5">₹ ••••</Text>
+              ) : (
+                <FinancialAmount
+                  amountPaise={monthlyExpensesPaise}
+                  type="expense"
+                  showDecimals={false}
+                  className="text-xs font-black mt-0.5"
+                />
+              )}
+            </View>
+
+            <View className="w-[1px] h-6 bg-[#EAEAE5]" />
+
+            <View>
+              <View className="flex-row items-center gap-1">
+                <ShieldCheck size={13} color="#B45309" strokeWidth={2.4} />
+                <Text className="text-[11px] font-bold text-[#71717A]">Net Saved</Text>
+              </View>
+              {hideBalances ? (
+                <Text className="text-[#121214] text-xs font-black mt-0.5">₹ ••••</Text>
               ) : (
                 <FinancialAmount
                   amountPaise={netSavingsPaise}
                   type="income"
-                  prefix="₹"
-                  className="text-emerald-600 dark:text-emerald-400 text-2xl font-black"
+                  showDecimals={false}
+                  className="text-xs font-black mt-0.5"
                 />
               )}
             </View>
           </View>
 
-          {/* Dual Pill Action Buttons (Matches Deposit / Withdraw from reference) */}
-          <View className="flex-row gap-2.5">
+          {/* 3 Prominent User-Friendly Action Buttons */}
+          <View className="flex-row gap-2">
             <TouchableOpacity
-              onPress={() => router.push("/transaction/new?type=income")}
+              onPress={() => router.push("/transaction/new?type=expense")}
               style={{
-                flex: 1,
-                backgroundColor: "#FFC83B",
-                paddingVertical: 13,
-                paddingHorizontal: 16,
+                flex: 1.2,
+                backgroundColor: "#121214",
+                paddingVertical: 12,
                 borderRadius: 9999,
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: 8,
+                gap: 6,
+              }}
+            >
+              <ArrowUpRight size={16} color="#FFFFFF" strokeWidth={2.5} />
+              <Text style={{ fontSize: 13, fontWeight: "900", color: "#FFFFFF" }}>
+                Add Expense
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/transaction/new?type=income")}
+              style={{
+                flex: 1.1,
+                backgroundColor: "#FFC83B",
+                paddingVertical: 12,
+                borderRadius: 9999,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
               }}
             >
               <ArrowDownLeft size={16} color="#121214" strokeWidth={2.5} />
-              <Text style={{ fontSize: 13, fontWeight: "800", color: "#121214" }}>
+              <Text style={{ fontSize: 13, fontWeight: "900", color: "#121214" }}>
                 Add Income
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => router.push("/transaction/new?type=expense")}
+              onPress={() => router.push("/transaction/new?type=transfer")}
               style={{
-                flex: 1,
-                backgroundColor: "#121214",
-                paddingVertical: 13,
-                paddingHorizontal: 16,
+                paddingVertical: 12,
+                paddingHorizontal: 14,
+                backgroundColor: "#FFFFFF",
                 borderRadius: 9999,
-                flexDirection: "row",
+                borderWidth: 1,
+                borderColor: "#EAEAE5",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: 8,
               }}
             >
-              <ArrowUpRight size={16} color="#FFFFFF" strokeWidth={2.5} />
-              <Text style={{ fontSize: 13, fontWeight: "800", color: "#FFFFFF" }}>
-                Add Expense
-              </Text>
+              <ArrowLeftRight size={16} color="#121214" strokeWidth={2.4} />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Quick Horizontal Filter / Routine Chips (Inspired by "Top Events" in screenshot) */}
+        {/* Wallets & Accounts Quick Strip */}
         <View className="mb-4">
-          <View className="flex-row items-center justify-between mb-2">
-            <Text className="text-xs font-black text-[#121214] dark:text-[#F4F4F5] uppercase tracking-wider">
-              Quick Expenses
+          <View className="flex-row items-center justify-between mb-2 px-1">
+            <Text className="text-xs font-black text-[#121214] uppercase tracking-wider">
+              My Accounts
             </Text>
-            <TouchableOpacity onPress={() => router.push("/(tabs)/transactions")}>
-              <Text className="text-xs font-bold text-[#71717A]">Ledger →</Text>
+            <TouchableOpacity onPress={() => router.push("/(tabs)/accounts")}>
+              <Text className="text-xs font-bold text-[#71717A]">Manage →</Text>
             </TouchableOpacity>
+          </View>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+            {accounts.map((acc) => {
+              const isCash = acc.type === "cash";
+              return (
+                <TouchableOpacity
+                  key={acc.id}
+                  onPress={() => router.push("/(tabs)/accounts")}
+                  className="bg-white rounded-2xl p-3 mr-2.5 border border-[#EAEAE5] flex-row items-center gap-2.5 shadow-sm min-w-[130px]"
+                >
+                  <View
+                    className="w-8 h-8 rounded-xl items-center justify-center"
+                    style={{ backgroundColor: isCash ? "#FFF4D2" : "#F7F7F5" }}
+                  >
+                    {isCash ? (
+                      <Coins size={16} color="#B45309" strokeWidth={2.4} />
+                    ) : (
+                      <Building2 size={16} color="#121214" strokeWidth={2.4} />
+                    )}
+                  </View>
+                  <View>
+                    <Text className="text-[11px] font-bold text-[#71717A]" numberOfLines={1}>
+                      {acc.name}
+                    </Text>
+                    {hideBalances ? (
+                      <Text className="text-xs font-black text-[#121214]">₹ ••••</Text>
+                    ) : (
+                      <FinancialAmount
+                        amountPaise={acc.current_balance_paise}
+                        type="neutral"
+                        showDecimals={false}
+                        className="text-xs font-black text-[#121214]"
+                      />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {/* Card 2: Proportionate, Sleek Warm Golden Budget Card */}
+        {totalBudgetPaise > 0 && (
+          <View
+            style={{
+              backgroundColor: "#F6CB68",
+              borderRadius: 26,
+              padding: 18,
+              marginBottom: 16,
+              borderWidth: 1,
+              borderColor: "#E8BC52",
+            }}
+          >
+            {/* Header */}
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <View>
+                <Text style={{ fontSize: 10, fontWeight: "800", color: "#121214", opacity: 0.7, textTransform: "uppercase" }}>
+                  Monthly Budget
+                </Text>
+                <Text style={{ fontSize: 14, fontWeight: "900", color: "#121214", marginTop: 1 }}>
+                  {now.toLocaleDateString("en-IN", { month: "long", year: "numeric" })}
+                </Text>
+              </View>
+
+              <View
+                style={{
+                  backgroundColor: budgetUtilizationPercent > 90 ? "#EF4444" : "#10B981",
+                  paddingHorizontal: 10,
+                  paddingVertical: 4,
+                  borderRadius: 9999,
+                }}
+              >
+                <Text style={{ fontSize: 10, fontWeight: "900", color: "#FFFFFF" }}>
+                  {budgetUtilizationPercent > 90 ? "High Spend" : "On Track"}
+                </Text>
+              </View>
+            </View>
+
+            {/* Daily Pace Hero Metric */}
+            <View
+              style={{
+                backgroundColor: "rgba(255,255,255,0.6)",
+                borderRadius: 18,
+                padding: 12,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 12,
+              }}
+            >
+              <View>
+                <Text style={{ fontSize: 10, fontWeight: "800", color: "#71717A", textTransform: "uppercase" }}>
+                  Safe Daily Allowance
+                </Text>
+                <Text style={{ fontSize: 20, fontWeight: "900", color: "#121214", marginTop: 1 }}>
+                  ₹{Math.round(dailyPacePaise / 100).toLocaleString("en-IN")}
+                  <Text style={{ fontSize: 12, fontWeight: "700", color: "#71717A" }}> / day</Text>
+                </Text>
+              </View>
+
+              <View style={{ alignItems: "flex-end" }}>
+                <Text style={{ fontSize: 10, fontWeight: "700", color: "#71717A" }}>
+                  {daysRemaining} days left
+                </Text>
+                <Text style={{ fontSize: 13, fontWeight: "900", color: "#121214", marginTop: 1 }}>
+                  {budgetUtilizationPercent}% Used
+                </Text>
+              </View>
+            </View>
+
+            {/* Progress bar */}
+            <View style={{ width: "100%", height: 6, backgroundColor: "rgba(0,0,0,0.1)", borderRadius: 3, overflow: "hidden", marginBottom: 12 }}>
+              <View
+                style={{
+                  width: `${budgetUtilizationPercent}%`,
+                  height: "100%",
+                  backgroundColor: budgetUtilizationPercent > 90 ? "#EF4444" : "#121214",
+                  borderRadius: 3,
+                }}
+              />
+            </View>
+
+            {/* Bottom 3 Pill Metrics */}
+            <View style={{ flexDirection: "row", gap: 6 }}>
+              <View
+                style={{
+                  flex: 1,
+                  backgroundColor: "#FFFFFF",
+                  borderRadius: 14,
+                  paddingVertical: 7,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ fontSize: 9, fontWeight: "700", color: "#71717A" }}>Spent</Text>
+                <Text style={{ fontSize: 12, fontWeight: "900", color: "#121214", marginTop: 1 }}>
+                  ₹{Math.round(monthlyExpensesPaise / 100).toLocaleString("en-IN")}
+                </Text>
+              </View>
+
+              <View
+                style={{
+                  flex: 1,
+                  backgroundColor: "#FFFFFF",
+                  borderRadius: 14,
+                  paddingVertical: 7,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ fontSize: 9, fontWeight: "700", color: "#71717A" }}>Available</Text>
+                <Text style={{ fontSize: 12, fontWeight: "900", color: "#121214", marginTop: 1 }}>
+                  ₹{Math.round(remainingBudgetPaise / 100).toLocaleString("en-IN")}
+                </Text>
+              </View>
+
+              <View
+                style={{
+                  flex: 1,
+                  backgroundColor: "#FFFFFF",
+                  borderRadius: 14,
+                  paddingVertical: 7,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ fontSize: 9, fontWeight: "700", color: "#71717A" }}>Status</Text>
+                <Text style={{ fontSize: 12, fontWeight: "900", color: "#121214", marginTop: 1 }}>
+                  {remainingBudgetPaise > 0 ? "Under Limit" : "Over Budget"}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* 1-Tap Quick Expenses (Faster habit recording) */}
+        <View className="mb-4">
+          <View className="flex-row items-center justify-between mb-2 px-1">
+            <Text className="text-xs font-black text-[#121214] uppercase tracking-wider">
+              1-Tap Routine Expenses
+            </Text>
+            <Caption>Instant Log</Caption>
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
@@ -300,7 +573,7 @@ export default function DashboardScreen() {
                   onPress={() => handleInstantTemplate(tmpl)}
                   style={{
                     paddingVertical: 9,
-                    paddingHorizontal: 14,
+                    paddingHorizontal: 13,
                     backgroundColor: isFirst ? "#FFC83B" : "#FFFFFF",
                     borderRadius: 9999,
                     marginRight: 8,
@@ -309,6 +582,10 @@ export default function DashboardScreen() {
                     flexDirection: "row",
                     alignItems: "center",
                     gap: 6,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.04,
+                    shadowRadius: 2,
                   }}
                 >
                   <IconComp size={14} color="#121214" strokeWidth={2.4} />
@@ -324,165 +601,17 @@ export default function DashboardScreen() {
           </ScrollView>
         </View>
 
-        {/* Card 2: Warm Amber Golden Hero Card (The signature matchday card from the screenshot!) */}
-        <View
-          style={{
-            backgroundColor: "#F6CB68",
-            borderRadius: 28,
-            padding: 20,
-            marginBottom: 16,
-            borderWidth: 1,
-            borderColor: "#E8BC52",
-          }}
-        >
-          {/* Top tag & Ongoing pill */}
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 11, fontWeight: "800", color: "#121214", opacity: 0.7, textTransform: "uppercase", letterSpacing: 0.6 }}>
-                Monthly Budget Cockpit
-              </Text>
-              <Text style={{ fontSize: 15, fontWeight: "900", color: "#121214", marginTop: 2 }}>
-                {now.toLocaleDateString("en-IN", { month: "long", year: "numeric" })}
-              </Text>
-            </View>
-
-            <View
-              style={{
-                backgroundColor: budgetUtilizationPercent > 90 ? "#EF4444" : "#10B981",
-                paddingHorizontal: 12,
-                paddingVertical: 4,
-                borderRadius: 9999,
-              }}
-            >
-              <Text style={{ fontSize: 11, fontWeight: "800", color: "#FFFFFF" }}>
-                {budgetUtilizationPercent > 90 ? "High Spend" : "On Track"}
-              </Text>
-            </View>
-          </View>
-
-          {/* Center focal stats (styled like the 2 : 1 match score in the screenshot) */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              paddingVertical: 10,
-              borderBottomWidth: 1,
-              borderBottomColor: "rgba(0,0,0,0.08)",
-              marginBottom: 14,
-            }}
-          >
-            <View style={{ alignItems: "center", flex: 1 }}>
-              <Text style={{ fontSize: 11, fontWeight: "700", color: "#121214", opacity: 0.7 }}>
-                Spent
-              </Text>
-              <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214", marginTop: 2 }}>
-                ₹{Math.round(monthlyExpensesPaise / 100).toLocaleString("en-IN")}
-              </Text>
-            </View>
-
-            <View
-              style={{
-                backgroundColor: "rgba(0,0,0,0.06)",
-                paddingHorizontal: 14,
-                paddingVertical: 6,
-                borderRadius: 16,
-                alignItems: "center",
-              }}
-            >
-              <Text style={{ fontSize: 10, fontWeight: "800", color: "#121214", opacity: 0.6 }}>
-                DAILY PACE
-              </Text>
-              <Text style={{ fontSize: 16, fontWeight: "900", color: "#121214" }}>
-                ₹{Math.round(dailyPacePaise / 100).toLocaleString("en-IN")}
-              </Text>
-            </View>
-
-            <View style={{ alignItems: "center", flex: 1 }}>
-              <Text style={{ fontSize: 11, fontWeight: "700", color: "#121214", opacity: 0.7 }}>
-                Remaining
-              </Text>
-              <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214", marginTop: 2 }}>
-                ₹{Math.round(remainingBudgetPaise / 100).toLocaleString("en-IN")}
-              </Text>
-            </View>
-          </View>
-
-          {/* Bottom Odds/Metric Pills (Matches 1x 1.8, x 2.0, 2x 6.0 pill tags from screenshot) */}
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <View
-              style={{
-                flex: 1,
-                backgroundColor: "#FFFFFF",
-                borderRadius: 16,
-                paddingVertical: 8,
-                alignItems: "center",
-                justifyContent: "center",
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 2,
-              }}
-            >
-              <Text style={{ fontSize: 10, fontWeight: "700", color: "#71717A" }}>Days Left</Text>
-              <Text style={{ fontSize: 13, fontWeight: "900", color: "#121214", marginTop: 1 }}>
-                {daysRemaining}d
-              </Text>
-            </View>
-
-            <View
-              style={{
-                flex: 1,
-                backgroundColor: "#FFFFFF",
-                borderRadius: 16,
-                paddingVertical: 8,
-                alignItems: "center",
-                justifyContent: "center",
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 2,
-              }}
-            >
-              <Text style={{ fontSize: 10, fontWeight: "700", color: "#71717A" }}>Burn Rate</Text>
-              <Text style={{ fontSize: 13, fontWeight: "900", color: "#121214", marginTop: 1 }}>
-                {budgetUtilizationPercent}%
-              </Text>
-            </View>
-
-            <View
-              style={{
-                flex: 1,
-                backgroundColor: "#FFFFFF",
-                borderRadius: 16,
-                paddingVertical: 8,
-                alignItems: "center",
-                justifyContent: "center",
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 2,
-              }}
-            >
-              <Text style={{ fontSize: 10, fontWeight: "700", color: "#71717A" }}>Status</Text>
-              <Text style={{ fontSize: 13, fontWeight: "900", color: "#121214", marginTop: 1 }}>
-                {remainingBudgetPaise > 0 ? "Under Limit" : "Over Budget"}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Weekly Pace Strip (Clean Calendar Rhythm) */}
-        <View className="bg-white dark:bg-charcoal-900 rounded-[28px] p-4 mb-4 border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm">
+        {/* Weekly Spend Activity Strip */}
+        <View className="bg-white rounded-[26px] p-4 mb-4 border border-[#EAEAE5] shadow-sm">
           <View className="flex-row items-center justify-between mb-3 px-1">
             <View className="flex-row items-center gap-1.5">
               <Calendar size={15} color="#121214" strokeWidth={2.4} />
-              <Text className="text-xs font-black text-[#121214] dark:text-[#F4F4F5] uppercase tracking-wider">
+              <Text className="text-xs font-black text-[#121214] uppercase tracking-wider">
                 This Week's Activity
               </Text>
             </View>
             <TouchableOpacity onPress={() => router.push("/(tabs)/calendar")}>
-              <Text className="text-xs font-bold text-[#FFC83B] dark:text-[#FFC83B]">Full Calendar →</Text>
+              <Text className="text-xs font-bold text-[#D97706]">Full Calendar →</Text>
             </TouchableOpacity>
           </View>
 
@@ -537,29 +666,33 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* Top Spending Categories */}
+        {/* Top Spending Categories Breakdown */}
         {categoryBreakdown.length > 0 && (
-          <View className="bg-white dark:bg-charcoal-900 rounded-[28px] p-5 mb-4 border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm">
-            <Text className="text-xs font-black text-[#121214] dark:text-[#F4F4F5] uppercase tracking-wider mb-3">
-              Top Expenses by Category
-            </Text>
+          <View className="bg-white rounded-[26px] p-5 mb-4 border border-[#EAEAE5] shadow-sm">
+            <View className="flex-row items-center justify-between mb-3">
+              <Text className="text-xs font-black text-[#121214] uppercase tracking-wider">
+                Top Categories
+              </Text>
+              <Text className="text-xs font-bold text-[#71717A]">This Month</Text>
+            </View>
+
             {categoryBreakdown.map((cat) => (
               <View key={cat.id} className="mb-3">
-                <View className="flex-row items-center justify-between mb-1">
+                <View className="flex-row items-center justify-between mb-1.5">
                   <View className="flex-row items-center gap-2">
                     <View
                       className="w-2.5 h-2.5 rounded-full"
                       style={{ backgroundColor: cat.color || "#FFC83B" }}
                     />
-                    <Text className="text-xs font-bold text-[#121214] dark:text-[#F4F4F5]">
+                    <Text className="text-xs font-bold text-[#121214]">
                       {cat.name}
                     </Text>
                   </View>
-                  <Text className="text-xs font-bold text-[#71717A]">
+                  <Text className="text-xs font-black text-[#121214]">
                     {formatCurrencyFromPaise(cat.spentPaise)} ({cat.percent}%)
                   </Text>
                 </View>
-                <View className="w-full bg-[#F0EFEA] dark:bg-charcoal-800 rounded-full h-2 overflow-hidden">
+                <View className="w-full bg-[#F0EFEA] rounded-full h-2 overflow-hidden">
                   <View
                     className="h-2 rounded-full"
                     style={{
@@ -576,16 +709,16 @@ export default function DashboardScreen() {
         {/* Recent Ledger Activity */}
         <View className="mb-4">
           <View className="flex-row items-center justify-between mb-3 px-1">
-            <Text className="text-xs font-black text-[#121214] dark:text-[#F4F4F5] uppercase tracking-wider">
-              Recent Ledger
+            <Text className="text-xs font-black text-[#121214] uppercase tracking-wider">
+              Recent Transactions
             </Text>
             <TouchableOpacity onPress={() => router.push("/(tabs)/transactions")}>
-              <Text className="text-xs font-bold text-[#71717A]">See All →</Text>
+              <Text className="text-xs font-bold text-[#D97706]">View All →</Text>
             </TouchableOpacity>
           </View>
 
           {recentTransactions.length === 0 ? (
-            <View className="bg-white dark:bg-charcoal-900 rounded-[24px] items-center py-8 border border-[#EAEAE5] dark:border-charcoal-800">
+            <View className="bg-white rounded-[24px] items-center py-8 border border-[#EAEAE5]">
               <Receipt size={24} color="#71717A" />
               <Caption className="text-center mt-2">No recorded activity yet.</Caption>
             </View>
@@ -596,14 +729,14 @@ export default function DashboardScreen() {
               return (
                 <View
                   key={tx.id}
-                  className="bg-white dark:bg-charcoal-900 rounded-[22px] p-3.5 mb-2.5 flex-row items-center justify-between border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm"
+                  className="bg-white rounded-[20px] p-3.5 mb-2.5 flex-row items-center justify-between border border-[#EAEAE5] shadow-sm"
                 >
                   <View className="flex-row items-center gap-3">
                     <View
                       style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 16,
+                        width: 38,
+                        height: 38,
+                        borderRadius: 14,
                         alignItems: "center",
                         justifyContent: "center",
                         backgroundColor: isIncome
@@ -614,15 +747,15 @@ export default function DashboardScreen() {
                       }}
                     >
                       {isIncome ? (
-                        <ArrowDownLeft size={18} color="#10B981" />
+                        <ArrowDownLeft size={17} color="#10B981" strokeWidth={2.4} />
                       ) : isTransfer ? (
-                        <ArrowLeftRight size={18} color="#3B82F6" />
+                        <ArrowLeftRight size={17} color="#3B82F6" strokeWidth={2.4} />
                       ) : (
-                        <ArrowUpRight size={18} color="#EF4444" />
+                        <ArrowUpRight size={17} color="#EF4444" strokeWidth={2.4} />
                       )}
                     </View>
                     <View>
-                      <Text className="text-sm font-bold text-[#121214] dark:text-[#F4F4F5]">
+                      <Text className="text-sm font-bold text-[#121214]">
                         {tx.description}
                       </Text>
                       <Text className="text-xs text-[#71717A]">
@@ -647,6 +780,6 @@ export default function DashboardScreen() {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

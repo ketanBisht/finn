@@ -5,9 +5,10 @@ import {
   Text,
   TouchableOpacity,
   Alert,
+  Platform,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -25,6 +26,7 @@ import { useFinanceStore } from "@/store/useFinanceStore";
 import { rupeesToPaise } from "@/lib/utils";
 
 export default function NewTransactionScreen() {
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ type?: string }>();
   const initialType: TransactionType =
     params.type === "income"
@@ -114,19 +116,29 @@ export default function NewTransactionScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F7F7F5] dark:bg-[#0E0E10]" edges={["top", "bottom"]}>
-      {/* Header */}
-      <View className="px-5 pt-3 pb-2 flex-row items-center justify-between">
+    <View style={{ flex: 1, backgroundColor: "#F7F7F5" }}>
+      {/* Header - Guaranteed Notch Clearance */}
+      <View
+        style={{
+          paddingTop: Math.max(insets.top, Platform.OS === "android" ? 44 : 20),
+          paddingHorizontal: 20,
+          paddingBottom: 10,
+          backgroundColor: "#F7F7F5",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
         <View>
           <Caption>RECORD ENTRY</Caption>
-          <Text className="text-xl font-black text-[#121214] dark:text-[#F4F4F5]">
+          <Text className="text-xl font-black text-[#121214]">
             New Transaction
           </Text>
         </View>
 
         <TouchableOpacity
           onPress={() => router.back()}
-          className="w-9 h-9 rounded-full bg-white dark:bg-charcoal-900 border border-[#EAEAE5] items-center justify-center"
+          className="w-9 h-9 rounded-full bg-white border border-[#EAEAE5] items-center justify-center"
         >
           <X size={18} color="#121214" />
         </TouchableOpacity>
@@ -462,6 +474,6 @@ export default function NewTransactionScreen() {
           </Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

@@ -7,33 +7,36 @@ import {
   PieChart,
   Wallet,
 } from "lucide-react-native";
-import { Platform, View } from "react-native";
+import { Platform, View, Text } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarShowLabel: false,
+        tabBarShowLabel: true,
         tabBarStyle: {
-          position: "absolute",
-          bottom: Platform.OS === "ios" ? 28 : 16,
-          left: 20,
-          right: 20,
           backgroundColor: "#121214",
-          borderRadius: 38,
-          height: 64,
-          borderTopWidth: 0,
-          borderWidth: 1,
-          borderColor: "#27272a",
-          elevation: 12,
+          borderTopColor: "#27272a",
+          borderTopWidth: 1,
+          height: Platform.OS === "ios" ? 82 + insets.bottom : 64 + Math.max(insets.bottom, 6),
+          paddingBottom: Platform.OS === "ios" ? insets.bottom + 2 : Math.max(insets.bottom, 6),
+          paddingTop: 6,
+          elevation: 10,
           shadowColor: "#000000",
-          shadowOffset: { width: 0, height: 6 },
-          shadowOpacity: 0.35,
-          shadowRadius: 12,
-          paddingHorizontal: 6,
-          paddingBottom: 0,
-          paddingTop: 0,
+          shadowOffset: { width: 0, height: -3 },
+          shadowOpacity: 0.2,
+          shadowRadius: 6,
+        },
+        tabBarActiveTintColor: "#FFC83B",
+        tabBarInactiveTintColor: "#71717A",
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: "800",
+          marginTop: 2,
         },
       }}
     >
@@ -44,18 +47,18 @@ export default function TabsLayout() {
           tabBarIcon: ({ focused }) => (
             <View
               style={{
-                width: 42,
-                height: 42,
-                borderRadius: 21,
+                width: 36,
+                height: 26,
+                borderRadius: 13,
                 backgroundColor: focused ? "#FFC83B" : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
               <LayoutDashboard
-                size={20}
-                color={focused ? "#121214" : "#A1A1AA"}
-                strokeWidth={focused ? 2.4 : 2}
+                size={17}
+                color={focused ? "#121214" : "#71717A"}
+                strokeWidth={focused ? 2.5 : 2}
               />
             </View>
           ),
@@ -68,18 +71,18 @@ export default function TabsLayout() {
           tabBarIcon: ({ focused }) => (
             <View
               style={{
-                width: 42,
-                height: 42,
-                borderRadius: 21,
+                width: 36,
+                height: 26,
+                borderRadius: 13,
                 backgroundColor: focused ? "#FFC83B" : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
               <Calendar
-                size={20}
-                color={focused ? "#121214" : "#A1A1AA"}
-                strokeWidth={focused ? 2.4 : 2}
+                size={17}
+                color={focused ? "#121214" : "#71717A"}
+                strokeWidth={focused ? 2.5 : 2}
               />
             </View>
           ),
@@ -88,22 +91,22 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="transactions"
         options={{
-          title: "Transactions",
+          title: "Ledger",
           tabBarIcon: ({ focused }) => (
             <View
               style={{
-                width: 42,
-                height: 42,
-                borderRadius: 21,
+                width: 36,
+                height: 26,
+                borderRadius: 13,
                 backgroundColor: focused ? "#FFC83B" : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
               <ArrowLeftRight
-                size={20}
-                color={focused ? "#121214" : "#A1A1AA"}
-                strokeWidth={focused ? 2.4 : 2}
+                size={17}
+                color={focused ? "#121214" : "#71717A"}
+                strokeWidth={focused ? 2.5 : 2}
               />
             </View>
           ),
@@ -116,18 +119,18 @@ export default function TabsLayout() {
           tabBarIcon: ({ focused }) => (
             <View
               style={{
-                width: 42,
-                height: 42,
-                borderRadius: 21,
+                width: 36,
+                height: 26,
+                borderRadius: 13,
                 backgroundColor: focused ? "#FFC83B" : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
               <PieChart
-                size={20}
-                color={focused ? "#121214" : "#A1A1AA"}
-                strokeWidth={focused ? 2.4 : 2}
+                size={17}
+                color={focused ? "#121214" : "#71717A"}
+                strokeWidth={focused ? 2.5 : 2}
               />
             </View>
           ),
@@ -140,18 +143,18 @@ export default function TabsLayout() {
           tabBarIcon: ({ focused }) => (
             <View
               style={{
-                width: 42,
-                height: 42,
-                borderRadius: 21,
+                width: 36,
+                height: 26,
+                borderRadius: 13,
                 backgroundColor: focused ? "#FFC83B" : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
               <Wallet
-                size={20}
-                color={focused ? "#121214" : "#A1A1AA"}
-                strokeWidth={focused ? 2.4 : 2}
+                size={17}
+                color={focused ? "#121214" : "#71717A"}
+                strokeWidth={focused ? 2.5 : 2}
               />
             </View>
           ),
@@ -166,4 +169,3 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
-

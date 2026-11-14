@@ -6,8 +6,9 @@ import {
   TouchableOpacity,
   Alert,
   Share,
+  Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import {
   Settings,
@@ -27,6 +28,7 @@ import { isSupabaseConfigured } from "@/lib/supabase";
 import { useFinanceStore } from "@/store/useFinanceStore";
 
 export default function SettingsScreen() {
+  const insets = useSafeAreaInsets();
   const accounts = useFinanceStore((s) => s.accounts);
   const transactions = useFinanceStore((s) => s.transactions);
   const budgets = useFinanceStore((s) => s.budgets);
@@ -51,19 +53,29 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F7F7F5] dark:bg-[#0E0E10]" edges={["top"]}>
-      {/* Header */}
-      <View className="px-5 pt-3 pb-2 flex-row items-center justify-between">
+    <View style={{ flex: 1, backgroundColor: "#F7F7F5" }}>
+      {/* Header - Guaranteed Notch Clearance */}
+      <View
+        style={{
+          paddingTop: Math.max(insets.top, Platform.OS === "android" ? 44 : 20),
+          paddingHorizontal: 20,
+          paddingBottom: 10,
+          backgroundColor: "#F7F7F5",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
         <View className="flex-row items-center gap-3">
           <TouchableOpacity
             onPress={() => router.back()}
-            className="w-9 h-9 rounded-full bg-white dark:bg-charcoal-900 border border-[#EAEAE5] dark:border-charcoal-800 items-center justify-center"
+            className="w-9 h-9 rounded-full bg-white border border-[#EAEAE5] items-center justify-center"
           >
             <ArrowLeft size={18} color="#121214" />
           </TouchableOpacity>
           <View>
             <Caption>PREFERENCES</Caption>
-            <Text className="text-xl font-black text-[#121214] dark:text-[#F4F4F5]">
+            <Text className="text-xl font-black text-[#121214]">
               Settings
             </Text>
           </View>
@@ -72,7 +84,7 @@ export default function SettingsScreen() {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 110 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 36 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Backend & Sync Status */}
@@ -167,6 +179,6 @@ export default function SettingsScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

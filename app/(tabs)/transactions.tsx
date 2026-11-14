@@ -5,8 +5,9 @@ import {
   Text,
   TouchableOpacity,
   Alert,
+  Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import {
   Search,
@@ -21,6 +22,7 @@ import { Heading, Caption, FinancialAmount } from "@/components/ui/typography";
 import { useFinanceStore } from "@/store/useFinanceStore";
 
 export default function TransactionsScreen() {
+  const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "expense" | "income" | "transfer">("all");
   const [selectedAccountFilter, setSelectedAccountFilter] = useState<string>("all");
@@ -59,14 +61,24 @@ export default function TransactionsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F7F7F5] dark:bg-[#0E0E10]" edges={["top"]}>
-      {/* Header with Live Ledger pill tag */}
-      <View className="px-5 pt-3 pb-2 flex-row items-center justify-between">
+    <View style={{ flex: 1, backgroundColor: "#F7F7F5" }}>
+      {/* Header with Guaranteed Notch Clearance */}
+      <View
+        style={{
+          paddingTop: Math.max(insets.top, Platform.OS === "android" ? 44 : 20),
+          paddingHorizontal: 20,
+          paddingBottom: 10,
+          backgroundColor: "#F7F7F5",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
         <View>
           <Text className="text-[11px] font-bold text-[#71717A] tracking-wider uppercase">
             AUDIT & HISTORY
           </Text>
-          <Text className="text-xl font-black text-[#121214] dark:text-[#F4F4F5]">
+          <Text className="text-xl font-black text-[#121214]">
             Transactions
           </Text>
         </View>
@@ -194,7 +206,7 @@ export default function TransactionsScreen() {
       {/* Transactions List */}
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 110 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28 }}
         showsVerticalScrollIndicator={false}
       >
         {filteredTransactions.length === 0 ? (
@@ -280,6 +292,6 @@ export default function TransactionsScreen() {
           })
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
