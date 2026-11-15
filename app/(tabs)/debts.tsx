@@ -21,17 +21,19 @@ import {
   TrendingDown,
   TrendingUp,
   HandCoins,
+  Edit3,
 } from "lucide-react-native";
 import { Caption } from "@/components/ui/typography";
 import { Input } from "@/components/ui/input";
 import { useFinanceStore } from "@/store/useFinanceStore";
 import { formatCurrencyFromPaise, rupeesToPaise } from "@/lib/utils";
-import { DebtDirection } from "@/types";
+import { Debt, DebtDirection } from "@/types";
 
 export default function DebtsScreen() {
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<"all" | "given" | "taken">("all");
   const [addModalVisible, setAddModalVisible] = useState(false);
+  const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
   const [settleModalVisible, setSettleModalVisible] = useState<string | null>(null);
   const [settleAmountStr, setSettleAmountStr] = useState("");
 
@@ -44,6 +46,7 @@ export default function DebtsScreen() {
 
   const debts = useFinanceStore((s) => s.debts);
   const addDebt = useFinanceStore((s) => s.addDebt);
+  const updateDebt = useFinanceStore((s) => s.updateDebt);
   const settleDebt = useFinanceStore((s) => s.settleDebt);
   const deleteDebt = useFinanceStore((s) => s.deleteDebt);
 
@@ -61,11 +64,27 @@ export default function DebtsScreen() {
     .reduce((s, d) => s + (d.amount_paise - d.settled_paise), 0);
 
   const resetForm = () => {
+    setEditingDebt(null);
     setPersonName("");
     setAmountStr("");
     setDueDate("");
     setNotes("");
     setDirection("given");
+  };
+
+  const openAdd = () => {
+    resetForm();
+    setAddModalVisible(true);
+  };
+
+  const openEdit = (debt: Debt) => {
+    setEditingDebt(debt);
+    setPersonName(debt.person_name);
+    setAmountStr(String(debt.amount_paise / 100));
+    setDirection(debt.direction);
+    setDueDate(debt.due_date ?? "");
+    setNotes(debt.notes ?? "");
+    setAddModalVisible(true);
   };
 
   const handleAdd = () => {
@@ -78,16 +97,26 @@ export default function DebtsScreen() {
       Alert.alert("Required", "Please enter an amount greater than 0.");
       return;
     }
-    addDebt({
-      user_id: "local-user",
-      direction,
-      person_name: personName.trim(),
-      amount_paise: paise,
-      settled_paise: 0,
-      due_date: dueDate.trim() || undefined,
-      notes: notes.trim() || undefined,
-      status: "pending",
-    });
+    if (editingDebt) {
+      updateDebt(editingDebt.id, {
+        person_name: personName.trim(),
+        amount_paise: paise,
+        direction,
+        due_date: dueDate.trim() || undefined,
+        notes: notes.trim() || undefined,
+      });
+    } else {
+      addDebt({
+        user_id: "local-user",
+        direction,
+        person_name: personName.trim(),
+        amount_paise: paise,
+        settled_paise: 0,
+        due_date: dueDate.trim() || undefined,
+        notes: notes.trim() || undefined,
+        status: "pending",
+      });
+    }
     resetForm();
     setAddModalVisible(false);
   };
@@ -434,6 +463,22 @@ export default function DebtsScreen() {
                     </TouchableOpacity>
 
                     <TouchableOpacity
+                      onPress={() => openEdit(debt)}
+                      style={{
+                        width: 40,
+                        height: 40,
+                        backgroundColor: "#F7F7F5",
+                        borderRadius: 999,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderWidth: 1,
+                        borderColor: "#EAEAE5",
+                      }}
+                    >
+                      <Edit3 size={15} color="#121214" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
                       onPress={() => handleDelete(debt.id, debt.person_name)}
                       style={{
                         width: 40,
@@ -456,8 +501,14 @@ export default function DebtsScreen() {
                       Fully Settled
                     </Text>
                     <TouchableOpacity
+                      onPress={() => openEdit(debt)}
+                      style={{ marginLeft: "auto", marginRight: 8, padding: 6 }}
+                    >
+                      <Edit3 size={14} color="#71717A" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
                       onPress={() => handleDelete(debt.id, debt.person_name)}
-                      style={{ marginLeft: "auto" }}
+                      style={{ padding: 6 }}
                     >
                       <Trash2 size={14} color="#A1A1AA" />
                     </TouchableOpacity>
@@ -489,9 +540,9 @@ export default function DebtsScreen() {
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <View>
                 <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214" }}>
-                  Record a Debt
+                  {editingDebt ? "Edit Debt Record" : "Record a Debt"}
                 </Text>
-                <Caption>Money lent or borrowed</Caption>
+                <Caption>{editingDebt ? "Update details, person or amount" : "Money lent or borrowed"}</Caption>
               </View>
               <TouchableOpacity
                 onPress={() => setAddModalVisible(false)}
@@ -586,7 +637,7 @@ export default function DebtsScreen() {
               }}
             >
               <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
-                Save Debt
+                {editingDebt ? "Update Record" : "Save Debt"}
               </Text>
             </TouchableOpacity>
           </View>

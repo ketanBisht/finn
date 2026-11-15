@@ -33,6 +33,7 @@ import {
   Bell,
   Lock,
   LogOut,
+  Repeat,
 } from "lucide-react-native";
 import { logoutAccount, updateStoredProfile } from "@/lib/local-auth";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -72,6 +73,7 @@ export default function SettingsScreen() {
   const transactions = useFinanceStore((s) => s.transactions);
   const budgets = useFinanceStore((s) => s.budgets);
   const debts = useFinanceStore((s) => s.debts);
+  const subscriptions = useFinanceStore((s) => s.subscriptions);
   const customPlatforms = useFinanceStore((s) => s.customPlatforms);
   const deletePlatform = useFinanceStore((s) => s.deletePlatform);
 
@@ -109,11 +111,13 @@ export default function SettingsScreen() {
         transactionsCount: transactions.length,
         budgetsCount: budgets.length,
         debtsCount: debts.length,
+        subscriptionsCount: subscriptions.length,
       },
       accounts,
       transactions,
       budgets,
       debts,
+      subscriptions,
       customPlatforms,
     };
 
@@ -356,6 +360,44 @@ export default function SettingsScreen() {
                 </Text>
                 <Text style={{ fontSize: 11, color: "#71717A", marginTop: 1 }}>
                   {debts.length} active records (Lent & Borrowed)
+                </Text>
+              </View>
+            </View>
+            <ChevronRight size={16} color="#A1A1AA" />
+          </TouchableOpacity>
+
+          {/* Subscriptions & Bills Shortcut */}
+          <TouchableOpacity
+            onPress={() => router.push("/subscriptions")}
+            activeOpacity={0.7}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingVertical: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: "#F0EFEA",
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <View
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 14,
+                  backgroundColor: "#EEF2FF",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Repeat size={18} color="#4F46E5" />
+              </View>
+              <View>
+                <Text style={{ fontSize: 14, fontWeight: "800", color: "#121214" }}>
+                  Subscriptions & Bills
+                </Text>
+                <Text style={{ fontSize: 11, color: "#71717A", marginTop: 1 }}>
+                  {subscriptions.length} recurring commitments
                 </Text>
               </View>
             </View>

@@ -19,6 +19,9 @@ import type {
   Debt,
   DebtDirection,
   DebtStatus,
+  Subscription,
+  SubscriptionBillingCycle,
+  SubscriptionStatus,
 } from "@/types";
 import {
   DEFAULT_EXPENSE_CATEGORIES,
@@ -38,6 +41,32 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase): Promise<void> {
     "PRAGMA user_version;"
   );
   const currentVersion = result?.user_version ?? 0;
+
+  // Ensure subscriptions table exists for existing databases
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS subscriptions (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL DEFAULT 'local-user',
+      name TEXT NOT NULL,
+      amount_paise INTEGER NOT NULL,
+      billing_cycle TEXT NOT NULL DEFAULT 'monthly' CHECK(billing_cycle IN ('monthly','yearly','weekly','quarterly')),
+      billing_day INTEGER NOT NULL DEFAULT 1,
+      next_billing_date TEXT NOT NULL,
+      category_id TEXT,
+      account_id TEXT,
+      platform TEXT,
+      payment_mode TEXT,
+      upi_app TEXT,
+      status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','paused','cancelled')),
+      auto_log INTEGER NOT NULL DEFAULT 0,
+      notes TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
+      FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE SET NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_subscriptions_next_date ON subscriptions(next_billing_date);
+  `);
 
   if (currentVersion >= CURRENT_DB_VERSION) return;
 
@@ -140,10 +169,33 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase): Promise<void> {
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
 
+      CREATE TABLE IF NOT EXISTS subscriptions (
+        id TEXT PRIMARY KEY NOT NULL,
+        user_id TEXT NOT NULL DEFAULT 'local-user',
+        name TEXT NOT NULL,
+        amount_paise INTEGER NOT NULL,
+        billing_cycle TEXT NOT NULL DEFAULT 'monthly' CHECK(billing_cycle IN ('monthly','yearly','weekly','quarterly')),
+        billing_day INTEGER NOT NULL DEFAULT 1,
+        next_billing_date TEXT NOT NULL,
+        category_id TEXT,
+        account_id TEXT,
+        platform TEXT,
+        payment_mode TEXT,
+        upi_app TEXT,
+        status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','paused','cancelled')),
+        auto_log INTEGER NOT NULL DEFAULT 0,
+        notes TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
+        FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE SET NULL
+      );
+
       CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(transaction_date);
       CREATE INDEX IF NOT EXISTS idx_transactions_account ON transactions(account_id);
       CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(type);
       CREATE INDEX IF NOT EXISTS idx_budgets_month_year ON budgets(month, year);
+      CREATE INDEX IF NOT EXISTS idx_subscriptions_next_date ON subscriptions(next_billing_date);
     `);
 
     // Seed default categories on first launch
@@ -338,6 +390,7 @@ export interface HydratedState {
   overallMonthlyBudgets: Record<string, number>;
   customPlatforms: string[];
   debts: Debt[];
+  subscriptions: Subscription[];
 }
 
 export async function hydrateAll(db: SQLiteDatabase): Promise<HydratedState> {
@@ -348,6 +401,7 @@ export async function hydrateAll(db: SQLiteDatabase): Promise<HydratedState> {
   const overallMonthlyBudgets = await getOverallMonthlyBudgets(db);
   const customPlatforms = await getCustomPlatforms(db);
   const debts = await getAllDebts(db);
+  const subscriptions = await getAllSubscriptions(db, categories, accounts);
 
   return {
     categories,
@@ -357,6 +411,7 @@ export async function hydrateAll(db: SQLiteDatabase): Promise<HydratedState> {
     overallMonthlyBudgets,
     customPlatforms,
     debts,
+    subscriptions,
   };
 }
 
@@ -471,6 +526,65 @@ export async function deleteTransactionDb(
   id: string
 ): Promise<void> {
   await db.runAsync("DELETE FROM transactions WHERE id = ?;", id);
+}
+
+export async function updateTransactionDb(
+  db: SQLiteDatabase,
+  id: string,
+  updates: Partial<Transaction>
+): Promise<void> {
+  const sets: string[] = [];
+  const values: (string | number | null)[] = [];
+
+  if (updates.amount_paise !== undefined) {
+    sets.push("amount_paise = ?");
+    values.push(updates.amount_paise);
+  }
+  if (updates.description !== undefined) {
+    sets.push("description = ?");
+    values.push(updates.description);
+  }
+  if (updates.notes !== undefined) {
+    sets.push("notes = ?");
+    values.push(updates.notes ?? null);
+  }
+  if (updates.platform !== undefined) {
+    sets.push("platform = ?");
+    values.push(updates.platform ?? null);
+  }
+  if (updates.account_id !== undefined) {
+    sets.push("account_id = ?");
+    values.push(updates.account_id);
+  }
+  if (updates.destination_account_id !== undefined) {
+    sets.push("destination_account_id = ?");
+    values.push(updates.destination_account_id ?? null);
+  }
+  if (updates.category_id !== undefined) {
+    sets.push("category_id = ?");
+    values.push(updates.category_id ?? null);
+  }
+  if (updates.payment_mode !== undefined) {
+    sets.push("payment_mode = ?");
+    values.push(updates.payment_mode ?? null);
+  }
+  if (updates.upi_app !== undefined) {
+    sets.push("upi_app = ?");
+    values.push(updates.upi_app ?? null);
+  }
+  if (updates.transaction_date !== undefined) {
+    sets.push("transaction_date = ?");
+    values.push(updates.transaction_date);
+  }
+
+  sets.push("updated_at = ?");
+  values.push(new Date().toISOString());
+
+  values.push(id);
+  await db.runAsync(
+    `UPDATE transactions SET ${sets.join(", ")} WHERE id = ?;`,
+    values
+  );
 }
 
 // Update account balance in DB
@@ -670,4 +784,148 @@ export async function updateDebtDb(
 
 export async function deleteDebtDb(db: SQLiteDatabase, id: string): Promise<void> {
   await db.runAsync("DELETE FROM debts WHERE id = ?;", id);
+}
+
+// ───────────────────────────── READ & WRITE: Subscriptions ─────────────────────────────
+
+function rowToSubscription(
+  row: Record<string, unknown>,
+  categories: Category[],
+  accounts: Account[]
+): Subscription {
+  const category = categories.find((c) => c.id === row.category_id);
+  const account = accounts.find((a) => a.id === row.account_id);
+
+  return {
+    id: row.id as string,
+    user_id: row.user_id as string,
+    name: row.name as string,
+    amount_paise: row.amount_paise as number,
+    billing_cycle: row.billing_cycle as SubscriptionBillingCycle,
+    billing_day: row.billing_day as number,
+    next_billing_date: row.next_billing_date as string,
+    category_id: (row.category_id as string | null) ?? undefined,
+    account_id: (row.account_id as string | null) ?? undefined,
+    platform: (row.platform as string | null) ?? undefined,
+    payment_mode: (row.payment_mode as PaymentMode | null) ?? undefined,
+    upi_app: (row.upi_app as UPIApp | string | null) ?? undefined,
+    status: row.status as SubscriptionStatus,
+    auto_log: (row.auto_log as number) === 1,
+    notes: (row.notes as string | null) ?? undefined,
+    created_at: row.created_at as string,
+    updated_at: row.updated_at as string,
+    category,
+    account,
+  };
+}
+
+export async function getAllSubscriptions(
+  db: SQLiteDatabase,
+  categories: Category[],
+  accounts: Account[]
+): Promise<Subscription[]> {
+  const rows = await db.getAllAsync(
+    "SELECT * FROM subscriptions ORDER BY status ASC, next_billing_date ASC;"
+  );
+  return (rows as Record<string, unknown>[]).map((r) =>
+    rowToSubscription(r, categories, accounts)
+  );
+}
+
+export async function insertSubscription(
+  db: SQLiteDatabase,
+  sub: Subscription
+): Promise<void> {
+  await db.runAsync(
+    `INSERT INTO subscriptions (id, user_id, name, amount_paise, billing_cycle, billing_day, next_billing_date, category_id, account_id, platform, payment_mode, upi_app, status, auto_log, notes, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+    sub.id,
+    sub.user_id,
+    sub.name,
+    sub.amount_paise,
+    sub.billing_cycle,
+    sub.billing_day,
+    sub.next_billing_date,
+    sub.category_id ?? null,
+    sub.account_id ?? null,
+    sub.platform ?? null,
+    sub.payment_mode ?? null,
+    sub.upi_app ?? null,
+    sub.status,
+    sub.auto_log ? 1 : 0,
+    sub.notes ?? null,
+    sub.created_at,
+    sub.updated_at
+  );
+}
+
+export async function updateSubscriptionDb(
+  db: SQLiteDatabase,
+  id: string,
+  updates: Partial<Subscription>
+): Promise<void> {
+  const sets: string[] = [];
+  const values: (string | number | null)[] = [];
+
+  if (updates.name !== undefined) {
+    sets.push("name = ?");
+    values.push(updates.name);
+  }
+  if (updates.amount_paise !== undefined) {
+    sets.push("amount_paise = ?");
+    values.push(updates.amount_paise);
+  }
+  if (updates.billing_cycle !== undefined) {
+    sets.push("billing_cycle = ?");
+    values.push(updates.billing_cycle);
+  }
+  if (updates.billing_day !== undefined) {
+    sets.push("billing_day = ?");
+    values.push(updates.billing_day);
+  }
+  if (updates.next_billing_date !== undefined) {
+    sets.push("next_billing_date = ?");
+    values.push(updates.next_billing_date);
+  }
+  if (updates.category_id !== undefined) {
+    sets.push("category_id = ?");
+    values.push(updates.category_id ?? null);
+  }
+  if (updates.account_id !== undefined) {
+    sets.push("account_id = ?");
+    values.push(updates.account_id ?? null);
+  }
+  if (updates.platform !== undefined) {
+    sets.push("platform = ?");
+    values.push(updates.platform ?? null);
+  }
+  if (updates.status !== undefined) {
+    sets.push("status = ?");
+    values.push(updates.status);
+  }
+  if (updates.auto_log !== undefined) {
+    sets.push("auto_log = ?");
+    values.push(updates.auto_log ? 1 : 0);
+  }
+  if (updates.notes !== undefined) {
+    sets.push("notes = ?");
+    values.push(updates.notes ?? null);
+  }
+
+  if (sets.length === 0) return;
+  sets.push("updated_at = ?");
+  values.push(new Date().toISOString());
+  values.push(id);
+
+  await db.runAsync(
+    `UPDATE subscriptions SET ${sets.join(", ")} WHERE id = ?;`,
+    ...values
+  );
+}
+
+export async function deleteSubscriptionDb(
+  db: SQLiteDatabase,
+  id: string
+): Promise<void> {
+  await db.runAsync("DELETE FROM subscriptions WHERE id = ?;", id);
 }

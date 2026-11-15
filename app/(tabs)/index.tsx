@@ -18,11 +18,13 @@ import {
   Receipt,
   ChevronRight,
   HandCoins,
+  Repeat,
+  Clock,
 } from "lucide-react-native";
 import { Caption, FinancialAmount } from "@/components/ui/typography";
 import { useFinanceStore } from "@/store/useFinanceStore";
 import { useAuthStore } from "@/store/useAuthStore";
-import { formatCurrencyFromPaise } from "@/lib/utils";
+import { formatCurrencyFromPaise, daysUntil } from "@/lib/utils";
 import { WageLogo } from "@/components/ui/wage-logo";
 
 export default function DashboardScreen() {
@@ -35,6 +37,7 @@ export default function DashboardScreen() {
   const budgets = useFinanceStore((s) => s.budgets);
   const overallMonthlyBudgets = useFinanceStore((s) => s.overallMonthlyBudgets);
   const debts = useFinanceStore((s) => s.debts);
+  const subscriptions = useFinanceStore((s) => s.subscriptions);
 
   const pendingDebts = debts.filter((d) => d.status !== "settled");
   const lentTotal = pendingDebts
@@ -43,6 +46,21 @@ export default function DashboardScreen() {
   const borrowedTotal = pendingDebts
     .filter((d) => d.direction === "taken")
     .reduce((s, d) => s + (d.amount_paise - d.settled_paise), 0);
+
+  const activeSubscriptions = subscriptions.filter((s) => s.status === "active");
+  const upcomingBills = activeSubscriptions
+    .filter((s) => daysUntil(s.next_billing_date) <= 7)
+    .sort(
+      (a, b) =>
+        new Date(a.next_billing_date).getTime() -
+        new Date(b.next_billing_date).getTime()
+    );
+  const totalMonthlySubsPaise = activeSubscriptions.reduce((sum, s) => {
+    if (s.billing_cycle === "weekly") return sum + s.amount_paise * 4.33;
+    if (s.billing_cycle === "quarterly") return sum + s.amount_paise / 3;
+    if (s.billing_cycle === "yearly") return sum + s.amount_paise / 12;
+    return sum + s.amount_paise;
+  }, 0);
 
   // 1. Total Net Balance across active accounts
   const totalBalancePaise = accounts.reduce(
@@ -372,6 +390,116 @@ export default function DashboardScreen() {
               </Text>
             </View>
           </View>
+        </TouchableOpacity>
+
+        {/* Subscriptions & Recurring Bills Snapshot */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => router.push("/subscriptions")}
+          style={{
+            backgroundColor: "#FFFFFF",
+            borderRadius: 24,
+            padding: 16,
+            marginBottom: 16,
+            borderWidth: 1,
+            borderColor: "#EAEAE5",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.04,
+            shadowRadius: 3,
+            elevation: 1,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Repeat size={16} color="#4F46E5" />
+              <Text style={{ fontSize: 12, fontWeight: "900", color: "#121214", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                Subscriptions & Bills
+              </Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+              <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A" }}>
+                {activeSubscriptions.length} active
+              </Text>
+              <ChevronRight size={14} color="#71717A" />
+            </View>
+          </View>
+
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              backgroundColor: "#F7F7F5",
+              borderRadius: 14,
+              padding: 12,
+              borderWidth: 1,
+              borderColor: "#EAEAE5",
+              marginBottom: upcomingBills.length > 0 ? 10 : 0,
+            }}
+          >
+            <View>
+              <Text style={{ fontSize: 10, fontWeight: "800", color: "#71717A", textTransform: "uppercase" }}>
+                Monthly Commitment
+              </Text>
+              <Text style={{ fontSize: 15, fontWeight: "900", color: "#121214", marginTop: 2 }}>
+                {formatCurrencyFromPaise(Math.round(totalMonthlySubsPaise), { showDecimals: false })}
+                <Text style={{ fontSize: 11, fontWeight: "600", color: "#71717A" }}>/mo</Text>
+              </Text>
+            </View>
+            <View style={{ alignItems: "flex-end" }}>
+              <Text style={{ fontSize: 10, fontWeight: "800", color: "#71717A", textTransform: "uppercase" }}>
+                Due in 7 Days
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "900",
+                  color: upcomingBills.length > 0 ? "#D97706" : "#059669",
+                  marginTop: 2,
+                }}
+              >
+                {upcomingBills.length > 0 ? `${upcomingBills.length} upcoming` : "All clear"}
+              </Text>
+            </View>
+          </View>
+
+          {upcomingBills.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 2 }}>
+              {upcomingBills.map((bill) => {
+                const days = daysUntil(bill.next_billing_date);
+                const tag = days <= 0 ? "Today" : days === 1 ? "Tomorrow" : `In ${days}d`;
+                return (
+                  <View
+                    key={bill.id}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 6,
+                      backgroundColor: "#FFFBEB",
+                      borderColor: "#FDE68A",
+                      borderWidth: 1,
+                      paddingVertical: 5,
+                      paddingHorizontal: 10,
+                      borderRadius: 12,
+                      marginRight: 8,
+                    }}
+                  >
+                    <Clock size={11} color="#D97706" />
+                    <Text style={{ fontSize: 11, fontWeight: "700", color: "#121214" }}>
+                      {bill.name}
+                    </Text>
+                    <Text style={{ fontSize: 11, fontWeight: "800", color: "#D97706" }}>
+                      {formatCurrencyFromPaise(bill.amount_paise, { showDecimals: false })}
+                    </Text>
+                    <Text style={{ fontSize: 10, fontWeight: "700", color: "#92400E" }}>
+                      ({tag})
+                    </Text>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          )}
         </TouchableOpacity>
 
         {/* 3. Recent Activity (Clean & Uncluttered) */}

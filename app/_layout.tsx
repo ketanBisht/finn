@@ -94,6 +94,12 @@ function AppShell() {
             headerShown: false,
           }}
         />
+        <Stack.Screen
+          name="subscriptions"
+          options={{
+            headerShown: false,
+          }}
+        />
       </Stack>
 
       {!appReady && (

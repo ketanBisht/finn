@@ -124,3 +124,30 @@ export interface Debt {
   updated_at: string;
 }
 
+export type SubscriptionBillingCycle = "monthly" | "yearly" | "weekly" | "quarterly";
+
+export type SubscriptionStatus = "active" | "paused" | "cancelled";
+
+export interface Subscription {
+  id: string;
+  user_id: string;
+  name: string;
+  amount_paise: number;
+  billing_cycle: SubscriptionBillingCycle;
+  billing_day: number; // 1-31
+  next_billing_date: string; // YYYY-MM-DD
+  category_id?: string | null;
+  account_id?: string | null;
+  platform?: string | null;
+  payment_mode?: PaymentMode;
+  upi_app?: UPIApp | string | null;
+  status: SubscriptionStatus;
+  auto_log?: boolean;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+  category?: Category;
+  account?: Account;
+}
+
+

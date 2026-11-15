@@ -64,3 +64,59 @@ export function formatLocalDate(date: Date | string): string {
 export function cn(...classes: (string | undefined | null | false)[]): string {
   return classes.filter(Boolean).join(" ");
 }
+
+/**
+ * Compute the next billing date from a billing day and cycle.
+ * Returns YYYY-MM-DD string.
+ */
+export function computeNextBillingDate(
+  billingDay: number,
+  cycle: "monthly" | "yearly" | "weekly" | "quarterly"
+): string {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const result = new Date(today);
+
+  if (cycle === "weekly") {
+    // next occurrence of that weekday (1=Mon…7=Sun)
+    const targetDay = Math.max(1, Math.min(7, billingDay));
+    const jsTargetDay = targetDay === 7 ? 0 : targetDay;
+    const diff = (jsTargetDay - today.getDay() + 7) % 7 || 7;
+    result.setDate(today.getDate() + diff);
+  } else if (cycle === "monthly") {
+    result.setDate(billingDay);
+    if (result <= today) {
+      result.setMonth(result.getMonth() + 1);
+      result.setDate(billingDay);
+    }
+  } else if (cycle === "quarterly") {
+    result.setDate(billingDay);
+    if (result <= today) {
+      result.setMonth(result.getMonth() + 3);
+      result.setDate(billingDay);
+    }
+  } else if (cycle === "yearly") {
+    result.setDate(billingDay);
+    if (result <= today) {
+      result.setFullYear(result.getFullYear() + 1);
+      result.setDate(billingDay);
+    }
+  }
+
+  const y = result.getFullYear();
+  const m = String(result.getMonth() + 1).padStart(2, "0");
+  const d = String(result.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/**
+ * Returns how many days until a YYYY-MM-DD date string (from today).
+ * Negative means overdue.
+ */
+export function daysUntil(dateStr: string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr);
+  target.setHours(0, 0, 0, 0);
+  return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}

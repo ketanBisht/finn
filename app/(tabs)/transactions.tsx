@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  Modal,
+  TextInput,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -17,10 +19,14 @@ import {
   Plus,
   Trash2,
   Calendar,
+  Edit3,
+  X,
 } from "lucide-react-native";
 import { Input } from "@/components/ui/input";
 import { Caption, FinancialAmount } from "@/components/ui/typography";
 import { useFinanceStore } from "@/store/useFinanceStore";
+import { rupeesToPaise } from "@/lib/utils";
+import { Transaction } from "@/types";
 
 export default function TransactionsScreen() {
   const insets = useSafeAreaInsets();
@@ -31,6 +37,43 @@ export default function TransactionsScreen() {
   const transactions = useFinanceStore((s) => s.transactions);
   const accounts = useFinanceStore((s) => s.accounts);
   const deleteTransaction = useFinanceStore((s) => s.deleteTransaction);
+  const updateTransaction = useFinanceStore((s) => s.updateTransaction);
+
+  // Edit Modal State
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+  const [editDesc, setEditDesc] = useState("");
+  const [editAmountStr, setEditAmountStr] = useState("");
+  const [editPlatform, setEditPlatform] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+
+  const openEdit = (tx: Transaction) => {
+    setEditingTx(tx);
+    setEditDesc(tx.description);
+    setEditAmountStr(String(tx.amount_paise / 100));
+    setEditPlatform(tx.platform ?? "");
+    setEditNotes(tx.notes ?? "");
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingTx) return;
+    const desc = editDesc.trim();
+    const paise = rupeesToPaise(parseFloat(editAmountStr) || 0);
+    if (!desc) {
+      Alert.alert("Required", "Please enter a description.");
+      return;
+    }
+    if (paise <= 0) {
+      Alert.alert("Required", "Please enter a valid amount in ₹.");
+      return;
+    }
+    updateTransaction(editingTx.id, {
+      description: desc,
+      amount_paise: paise,
+      platform: editPlatform.trim() || undefined,
+      notes: editNotes.trim() || undefined,
+    });
+    setEditingTx(null);
+  };
 
   const filteredTransactions = transactions.filter((t) => {
     const q = searchQuery.toLowerCase();
@@ -395,20 +438,109 @@ export default function TransactionsScreen() {
                     prefix={isIncome ? "+" : isTransfer ? "" : "-"}
                     className="text-sm font-black"
                   />
-                  <TouchableOpacity
-                    onPress={() => handleDelete(tx.id, tx.description)}
-                    style={{ padding: 6, marginTop: 2, opacity: 0.35 }}
-                    activeOpacity={1}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Trash2 size={13} color="#EF4444" />
-                  </TouchableOpacity>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}>
+                    <TouchableOpacity
+                      onPress={() => openEdit(tx)}
+                      style={{ padding: 6, opacity: 0.7 }}
+                      activeOpacity={0.7}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Edit3 size={13} color="#121214" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => handleDelete(tx.id, tx.description)}
+                      style={{ padding: 6, opacity: 0.6 }}
+                      activeOpacity={0.7}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Trash2 size={13} color="#EF4444" />
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
             );
           })
         )}
       </ScrollView>
+
+      {/* Edit Transaction Modal */}
+      <Modal
+        visible={editingTx !== null}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setEditingTx(null)}
+      >
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
+          <View
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderTopLeftRadius: 32,
+              borderTopRightRadius: 32,
+              padding: 24,
+              paddingBottom: 36,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <View>
+                <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214" }}>
+                  Edit Transaction
+                </Text>
+                <Caption>Update description, amount or notes</Caption>
+              </View>
+              <TouchableOpacity
+                onPress={() => setEditingTx(null)}
+                style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: "#F7F7F5", alignItems: "center", justifyContent: "center" }}
+              >
+                <X size={16} color="#121214" />
+              </TouchableOpacity>
+            </View>
+
+            <Input
+              label="Description"
+              placeholder="e.g. Swiggy Lunch, Uber ride"
+              value={editDesc}
+              onChangeText={setEditDesc}
+            />
+
+            <Input
+              label="Amount (₹)"
+              placeholder="0"
+              keyboardType="numeric"
+              value={editAmountStr}
+              onChangeText={setEditAmountStr}
+            />
+
+            <Input
+              label="Platform / Merchant (optional)"
+              placeholder="e.g. Swiggy, Amazon, Uber"
+              value={editPlatform}
+              onChangeText={setEditPlatform}
+            />
+
+            <Input
+              label="Notes (optional)"
+              placeholder="e.g. Team lunch"
+              value={editNotes}
+              onChangeText={setEditNotes}
+              containerClassName="mb-6"
+            />
+
+            <TouchableOpacity
+              onPress={handleSaveEdit}
+              style={{
+                backgroundColor: "#121214",
+                paddingVertical: 14,
+                borderRadius: 999,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
+                Update Transaction
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

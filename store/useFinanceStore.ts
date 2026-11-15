@@ -12,7 +12,7 @@
 
 import { create } from "zustand";
 import type { SQLiteDatabase } from "expo-sqlite";
-import { Account, Category, Transaction, Budget, Debt, DebtStatus } from "@/types";
+import { Account, Category, Transaction, Budget, Debt, DebtStatus, Subscription, SubscriptionStatus } from "@/types";
 import {
   hydrateAll,
   insertAccount,
@@ -20,6 +20,7 @@ import {
   deleteAccountDb,
   insertTransaction,
   deleteTransactionDb,
+  updateTransactionDb,
   updateAccountBalance,
   upsertBudget,
   deleteBudgetDb,
@@ -29,7 +30,11 @@ import {
   insertDebt,
   updateDebtDb,
   deleteDebtDb,
+  insertSubscription,
+  updateSubscriptionDb,
+  deleteSubscriptionDb,
 } from "@/lib/db";
+import { computeNextBillingDate } from "@/lib/utils";
 
 // ───────────────────────────── Store Interface ─────────────────────────────
 
@@ -54,6 +59,7 @@ interface FinanceStoreState {
   addTransaction: (
     tx: Omit<Transaction, "id" | "created_at" | "updated_at">
   ) => void;
+  updateTransaction: (id: string, updates: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
   addAccount: (
     acc: Omit<
@@ -74,8 +80,15 @@ interface FinanceStoreState {
   ) => void;
   // Debts
   addDebt: (debt: Omit<Debt, "id" | "created_at" | "updated_at">) => void;
+  updateDebt: (id: string, updates: Partial<Debt>) => void;
   settleDebt: (id: string, settlePaise: number) => void;
   deleteDebt: (id: string) => void;
+  // Subscriptions
+  subscriptions: Subscription[];
+  addSubscription: (sub: Omit<Subscription, "id" | "created_at" | "updated_at" | "next_billing_date">) => void;
+  updateSubscription: (id: string, updates: Partial<Subscription>) => void;
+  deleteSubscription: (id: string) => void;
+  toggleSubscriptionStatus: (id: string, status: SubscriptionStatus) => void;
 }
 
 // ───────────────────────────── Store ─────────────────────────────
@@ -88,6 +101,7 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
   customPlatforms: [],
   overallMonthlyBudgets: {},
   debts: [],
+  subscriptions: [],
   isHydrated: false,
   _db: null,
 
@@ -183,6 +197,53 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
           console.error("[DB] Failed to insert transaction:", e);
         }
       })();
+    }
+  },
+
+  // ───── Update Transaction ─────
+  updateTransaction: (id: string, updates: Partial<Transaction>) => {
+    const state = get();
+    const db = state._db;
+    const tx = state.transactions.find((t) => t.id === id);
+    if (!tx) return;
+
+    let updatedAccounts = [...state.accounts];
+
+    // If amount changed, adjust account balance
+    if (updates.amount_paise !== undefined && updates.amount_paise !== tx.amount_paise) {
+      const diff = updates.amount_paise - tx.amount_paise;
+      updatedAccounts = updatedAccounts.map((acc) => {
+        if (acc.id === tx.account_id) {
+          if (tx.type === "income") {
+            return { ...acc, current_balance_paise: acc.current_balance_paise + diff };
+          } else if (tx.type === "expense") {
+            return { ...acc, current_balance_paise: acc.current_balance_paise - diff };
+          }
+        }
+        return acc;
+      });
+    }
+
+    const now = new Date().toISOString();
+    set({
+      transactions: state.transactions.map((t) =>
+        t.id === id ? { ...t, ...updates, updated_at: now } : t
+      ),
+      accounts: updatedAccounts,
+    });
+
+    if (db) {
+      updateTransactionDb(db, id, updates).catch((e) =>
+        console.error("[DB] Failed to update transaction:", e)
+      );
+      for (const acc of updatedAccounts) {
+        const original = state.accounts.find((a) => a.id === acc.id);
+        if (original && original.current_balance_paise !== acc.current_balance_paise) {
+          updateAccountBalance(db, acc.id, acc.current_balance_paise).catch((e) =>
+            console.error("[DB] Failed to update balance:", e)
+          );
+        }
+      }
     }
   },
 
@@ -447,6 +508,23 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
     }
   },
 
+  // ───── Update Debt ─────
+  updateDebt: (id, updates) => {
+    const state = get();
+    const db = state._db;
+    const now = new Date().toISOString();
+    set({
+      debts: state.debts.map((d) =>
+        d.id === id ? { ...d, ...updates, updated_at: now } : d
+      ),
+    });
+    if (db) {
+      updateDebtDb(db, id, updates).catch((e) =>
+        console.error("[DB] Failed to update debt:", e)
+      );
+    }
+  },
+
   // ───── Settle Debt (partial or full) ─────
   settleDebt: (id, settlePaise) => {
     const state = get();
@@ -481,6 +559,83 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
     if (db) {
       deleteDebtDb(db, id).catch((e) =>
         console.error("[DB] Failed to delete debt:", e)
+      );
+    }
+  },
+
+  // ───── Add Subscription ─────
+  addSubscription: (subData) => {
+    const state = get();
+    const db = state._db;
+    const now = new Date().toISOString();
+    const next_billing_date = computeNextBillingDate(subData.billing_day, subData.billing_cycle);
+    const newSub: Subscription = {
+      ...subData,
+      id: `sub-${Date.now()}`,
+      next_billing_date,
+      created_at: now,
+      updated_at: now,
+    };
+    set({ subscriptions: [newSub, ...state.subscriptions] });
+    if (db) {
+      insertSubscription(db, newSub).catch((e) =>
+        console.error("[DB] Failed to insert subscription:", e)
+      );
+    }
+  },
+
+  // ───── Update Subscription ─────
+  updateSubscription: (id, updates) => {
+    const state = get();
+    const db = state._db;
+    const now = new Date().toISOString();
+
+    // If billing_day or billing_cycle changed, recompute next_billing_date
+    const existing = state.subscriptions.find((s) => s.id === id);
+    let extra: Partial<Subscription> = {};
+    if (existing && (updates.billing_day !== undefined || updates.billing_cycle !== undefined)) {
+      const day = updates.billing_day ?? existing.billing_day;
+      const cycle = updates.billing_cycle ?? existing.billing_cycle;
+      extra.next_billing_date = computeNextBillingDate(day, cycle);
+    }
+
+    set({
+      subscriptions: state.subscriptions.map((s) =>
+        s.id === id ? { ...s, ...updates, ...extra, updated_at: now } : s
+      ),
+    });
+    if (db) {
+      updateSubscriptionDb(db, id, { ...updates, ...extra }).catch((e) =>
+        console.error("[DB] Failed to update subscription:", e)
+      );
+    }
+  },
+
+  // ───── Delete Subscription ─────
+  deleteSubscription: (id) => {
+    const state = get();
+    const db = state._db;
+    set({ subscriptions: state.subscriptions.filter((s) => s.id !== id) });
+    if (db) {
+      deleteSubscriptionDb(db, id).catch((e) =>
+        console.error("[DB] Failed to delete subscription:", e)
+      );
+    }
+  },
+
+  // ───── Toggle Subscription Status ─────
+  toggleSubscriptionStatus: (id, status) => {
+    const state = get();
+    const db = state._db;
+    const now = new Date().toISOString();
+    set({
+      subscriptions: state.subscriptions.map((s) =>
+        s.id === id ? { ...s, status, updated_at: now } : s
+      ),
+    });
+    if (db) {
+      updateSubscriptionDb(db, id, { status }).catch((e) =>
+        console.error("[DB] Failed to toggle subscription status:", e)
       );
     }
   },
