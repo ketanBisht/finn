@@ -34,6 +34,8 @@ import {
   Lock,
   LogOut,
   Repeat,
+  Upload,
+  KeyRound,
 } from "lucide-react-native";
 import { logoutAccount, updateStoredProfile } from "@/lib/local-auth";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -42,6 +44,7 @@ import { Badge } from "@/components/ui/badge";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { useFinanceStore } from "@/store/useFinanceStore";
 import { formatCurrencyFromPaise } from "@/lib/utils";
+import { exportAndShareEncryptedBackup, pickAndDecryptBackup } from "@/lib/backup";
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -76,6 +79,16 @@ export default function SettingsScreen() {
   const subscriptions = useFinanceStore((s) => s.subscriptions);
   const customPlatforms = useFinanceStore((s) => s.customPlatforms);
   const deletePlatform = useFinanceStore((s) => s.deletePlatform);
+  const categories = useFinanceStore((s) => s.categories);
+  const overallMonthlyBudgets = useFinanceStore((s) => s.overallMonthlyBudgets);
+  const restoreFromBackup = useFinanceStore((s) => s.restoreFromBackup);
+
+  // Zero-Knowledge Backup / Restore State
+  const [backupModalVisible, setBackupModalVisible] = useState(false);
+  const [restoreModalVisible, setRestoreModalVisible] = useState(false);
+  const [backupPassword, setBackupPassword] = useState("");
+  const [restorePassword, setRestorePassword] = useState("");
+  const [isProcessingBackup, setIsProcessingBackup] = useState(false);
 
   // Custom Platforms Modal
   const [platformsModalVisible, setPlatformsModalVisible] = useState(false);
@@ -128,6 +141,74 @@ export default function SettingsScreen() {
       });
     } catch (e: any) {
       Alert.alert("Export Error", e?.message || "Failed to export data");
+    }
+  };
+
+  const handleCreateEncryptedBackup = async () => {
+    if (backupPassword.trim().length < 4) {
+      Alert.alert(
+        "Passphrase Required",
+        "Please enter a passphrase of at least 4 characters to encrypt your backup."
+      );
+      return;
+    }
+    try {
+      setIsProcessingBackup(true);
+      await exportAndShareEncryptedBackup(
+        {
+          accounts,
+          categories,
+          transactions,
+          budgets,
+          overallMonthlyBudgets,
+          customPlatforms,
+          debts,
+          subscriptions,
+        },
+        backupPassword,
+        { name: userName, email: userEmail }
+      );
+      setBackupModalVisible(false);
+      setBackupPassword("");
+    } catch (e: any) {
+      Alert.alert("Backup Failed", e?.message || "Failed to create encrypted backup.");
+    } finally {
+      setIsProcessingBackup(false);
+    }
+  };
+
+  const handleRestoreBackup = async () => {
+    if (!restorePassword.trim()) {
+      Alert.alert(
+        "Passphrase Required",
+        "Please enter the passphrase used when creating this backup."
+      );
+      return;
+    }
+    try {
+      setIsProcessingBackup(true);
+      const result = await pickAndDecryptBackup(restorePassword);
+      if (!result) {
+        setIsProcessingBackup(false);
+        return;
+      }
+
+      await restoreFromBackup(result.state);
+      setRestoreModalVisible(false);
+      setRestorePassword("");
+
+      Alert.alert(
+        "Backup Restored Successfully!",
+        `Restored from "${result.fileName}":\n• ${result.state.transactions?.length || 0} transactions\n• ${result.state.accounts?.length || 0} accounts\n• ${result.state.debts?.length || 0} debts\n• ${result.state.subscriptions?.length || 0} subscriptions`,
+        [{ text: "OK" }]
+      );
+    } catch (e: any) {
+      Alert.alert(
+        "Restore Failed",
+        e?.message || "Could not decrypt backup. Verify your passphrase."
+      );
+    } finally {
+      setIsProcessingBackup(false);
     }
   };
 
@@ -627,14 +708,106 @@ export default function SettingsScreen() {
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
               <Shield size={16} color="#121214" />
               <Text style={{ fontSize: 13, fontWeight: "700", color: "#121214" }}>
-                Cloud Backup Link
+                Zero-Knowledge Privacy
               </Text>
             </View>
-            <Text style={{ fontSize: 12, fontWeight: "700", color: "#71717A" }}>
-              {isSupabaseConfigured ? "Connected" : "Local Standalone"}
-            </Text>
+            <View
+              style={{
+                backgroundColor: "#FEF3C7",
+                paddingHorizontal: 8,
+                paddingVertical: 3,
+                borderRadius: 999,
+              }}
+            >
+              <Text style={{ fontSize: 10, fontWeight: "800", color: "#B45309" }}>
+                Client-Side AES-256
+              </Text>
+            </View>
           </View>
 
+          {/* 1. Create Encrypted Backup */}
+          <TouchableOpacity
+            onPress={() => {
+              setBackupPassword("");
+              setBackupModalVisible(true);
+            }}
+            activeOpacity={0.7}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingVertical: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: "#F0EFEA",
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <View
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 10,
+                  backgroundColor: "#E6FBF2",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Lock size={15} color="#059669" />
+              </View>
+              <View>
+                <Text style={{ fontSize: 13, fontWeight: "800", color: "#121214" }}>
+                  Create Encrypted Backup
+                </Text>
+                <Text style={{ fontSize: 11, color: "#71717A" }}>
+                  Save to Google Drive, iCloud, or Files
+                </Text>
+              </View>
+            </View>
+            <ChevronRight size={16} color="#A1A1AA" />
+          </TouchableOpacity>
+
+          {/* 2. Restore from Backup */}
+          <TouchableOpacity
+            onPress={() => {
+              setRestorePassword("");
+              setRestoreModalVisible(true);
+            }}
+            activeOpacity={0.7}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingVertical: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: "#F0EFEA",
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <View
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 10,
+                  backgroundColor: "#FFF4D2",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Upload size={15} color="#B45309" />
+              </View>
+              <View>
+                <Text style={{ fontSize: 13, fontWeight: "800", color: "#121214" }}>
+                  Restore from Backup
+                </Text>
+                <Text style={{ fontSize: 11, color: "#71717A" }}>
+                  Restore data on any phone with your passphrase
+                </Text>
+              </View>
+            </View>
+            <ChevronRight size={16} color="#A1A1AA" />
+          </TouchableOpacity>
+
+          {/* 3. Export Raw JSON (Audit) */}
           <TouchableOpacity
             onPress={handleExportData}
             activeOpacity={0.7}
@@ -646,13 +819,13 @@ export default function SettingsScreen() {
             }}
           >
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-              <Download size={16} color="#121214" />
+              <Download size={16} color="#71717A" />
               <View>
-                <Text style={{ fontSize: 13, fontWeight: "700", color: "#121214" }}>
-                  Export JSON Backup
+                <Text style={{ fontSize: 13, fontWeight: "700", color: "#71717A" }}>
+                  Export Raw JSON (Audit)
                 </Text>
-                <Text style={{ fontSize: 11, color: "#71717A" }}>
-                  Share or save complete snapshot
+                <Text style={{ fontSize: 11, color: "#A1A1AA" }}>
+                  Unencrypted developer snapshot
                 </Text>
               </View>
             </View>
@@ -903,6 +1076,182 @@ export default function SettingsScreen() {
             >
               <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
                 Done
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Create Encrypted Backup Modal ── */}
+      <Modal
+        visible={backupModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => {
+          if (!isProcessingBackup) setBackupModalVisible(false);
+        }}
+      >
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
+          <View
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderTopLeftRadius: 32,
+              borderTopRightRadius: 32,
+              padding: 24,
+              paddingBottom: 36,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <View>
+                <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214" }}>
+                  Create Encrypted Backup
+                </Text>
+                <Caption>Zero-Knowledge AES-256 Protection</Caption>
+              </View>
+              <TouchableOpacity
+                onPress={() => setBackupModalVisible(false)}
+                disabled={isProcessingBackup}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  backgroundColor: "#F7F7F5",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <X size={16} color="#121214" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ backgroundColor: "#F7F7F5", borderRadius: 16, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: "#EAEAE5" }}>
+              <Text style={{ fontSize: 12, color: "#71717A", lineHeight: 18 }}>
+                🔐 Your financial records will be encrypted with this passphrase before leaving your phone. You can safely save this file to Google Drive, iCloud, or email it to yourself.
+              </Text>
+            </View>
+
+            <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A", textTransform: "uppercase", marginBottom: 6 }}>
+              Set a Backup Passphrase *
+            </Text>
+            <TextInput
+              value={backupPassword}
+              onChangeText={setBackupPassword}
+              placeholder="Min 4 characters (e.g. MySecretPIN2026)"
+              placeholderTextColor="#A1A1AA"
+              secureTextEntry
+              style={{
+                backgroundColor: "#FFFFFF",
+                borderRadius: 14,
+                padding: 14,
+                fontSize: 15,
+                fontWeight: "700",
+                color: "#121214",
+                borderWidth: 1,
+                borderColor: "#EAEAE5",
+                marginBottom: 20,
+              }}
+            />
+
+            <TouchableOpacity
+              onPress={handleCreateEncryptedBackup}
+              disabled={isProcessingBackup}
+              style={{
+                backgroundColor: "#121214",
+                paddingVertical: 14,
+                borderRadius: 999,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
+                {isProcessingBackup ? "Encrypting..." : "Encrypt & Share Backup"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Restore from Backup Modal ── */}
+      <Modal
+        visible={restoreModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => {
+          if (!isProcessingBackup) setRestoreModalVisible(false);
+        }}
+      >
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
+          <View
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderTopLeftRadius: 32,
+              borderTopRightRadius: 32,
+              padding: 24,
+              paddingBottom: 36,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <View>
+                <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214" }}>
+                  Restore from Backup
+                </Text>
+                <Caption>Restore data from .wage.json</Caption>
+              </View>
+              <TouchableOpacity
+                onPress={() => setRestoreModalVisible(false)}
+                disabled={isProcessingBackup}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  backgroundColor: "#F7F7F5",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <X size={16} color="#121214" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ backgroundColor: "#FFFBEB", borderRadius: 16, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: "#FDE68A" }}>
+              <Text style={{ fontSize: 12, color: "#92400E", lineHeight: 18 }}>
+                ⚠️ Restoring will overwrite existing ledger data on this device with records from your backup file.
+              </Text>
+            </View>
+
+            <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A", textTransform: "uppercase", marginBottom: 6 }}>
+              Enter Backup Passphrase *
+            </Text>
+            <TextInput
+              value={restorePassword}
+              onChangeText={setRestorePassword}
+              placeholder="Passphrase used when creating backup"
+              placeholderTextColor="#A1A1AA"
+              secureTextEntry
+              style={{
+                backgroundColor: "#FFFFFF",
+                borderRadius: 14,
+                padding: 14,
+                fontSize: 15,
+                fontWeight: "700",
+                color: "#121214",
+                borderWidth: 1,
+                borderColor: "#EAEAE5",
+                marginBottom: 20,
+              }}
+            />
+
+            <TouchableOpacity
+              onPress={handleRestoreBackup}
+              disabled={isProcessingBackup}
+              style={{
+                backgroundColor: "#B45309",
+                paddingVertical: 14,
+                borderRadius: 999,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
+                {isProcessingBackup ? "Decrypting & Restoring..." : "Choose File & Restore"}
               </Text>
             </TouchableOpacity>
           </View>

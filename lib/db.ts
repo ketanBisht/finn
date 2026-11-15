@@ -929,3 +929,179 @@ export async function deleteSubscriptionDb(
 ): Promise<void> {
   await db.runAsync("DELETE FROM subscriptions WHERE id = ?;", id);
 }
+
+// ───────────────────────────── FULL RESTORE ─────────────────────────────
+
+export async function restoreDatabaseSnapshot(
+  db: SQLiteDatabase,
+  data: HydratedState
+): Promise<void> {
+  await db.withTransactionAsync(async () => {
+    // 1. Wipe existing data
+    await db.runAsync("DELETE FROM transactions;");
+    await db.runAsync("DELETE FROM debts;");
+    await db.runAsync("DELETE FROM subscriptions;");
+    await db.runAsync("DELETE FROM budgets;");
+    await db.runAsync("DELETE FROM monthly_ceilings;");
+    await db.runAsync("DELETE FROM custom_platforms;");
+    await db.runAsync("DELETE FROM accounts;");
+
+    // 2. Insert Accounts
+    if (data.accounts && Array.isArray(data.accounts)) {
+      for (const a of data.accounts) {
+        await db.runAsync(
+          `INSERT OR REPLACE INTO accounts (id, user_id, name, type, opening_balance_paise, current_balance_paise, currency, is_active, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+          [
+            a.id,
+            a.user_id || "local-user",
+            a.name,
+            a.type,
+            a.opening_balance_paise,
+            a.current_balance_paise,
+            a.currency || "INR",
+            a.is_active ? 1 : 0,
+            a.created_at || new Date().toISOString(),
+            a.updated_at || new Date().toISOString(),
+          ]
+        );
+      }
+    }
+
+    // 3. Insert Transactions
+    if (data.transactions && Array.isArray(data.transactions)) {
+      for (const t of data.transactions) {
+        await db.runAsync(
+          `INSERT OR REPLACE INTO transactions (id, user_id, account_id, category_id, amount_paise, type, destination_account_id, description, notes, platform, payment_mode, upi_app, transaction_date, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+          [
+            t.id,
+            t.user_id || "local-user",
+            t.account_id,
+            t.category_id ?? null,
+            t.amount_paise,
+            t.type,
+            t.destination_account_id ?? null,
+            t.description,
+            t.notes ?? null,
+            t.platform ?? null,
+            t.payment_mode ?? null,
+            t.upi_app ?? null,
+            t.transaction_date,
+            t.created_at || new Date().toISOString(),
+            t.updated_at || new Date().toISOString(),
+          ]
+        );
+      }
+    }
+
+    // 4. Insert Debts
+    if (data.debts && Array.isArray(data.debts)) {
+      for (const d of data.debts) {
+        await db.runAsync(
+          `INSERT OR REPLACE INTO debts (id, user_id, direction, person_name, amount_paise, settled_paise, due_date, notes, status, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+          [
+            d.id,
+            d.user_id || "local-user",
+            d.direction,
+            d.person_name,
+            d.amount_paise,
+            d.settled_paise,
+            d.due_date ?? null,
+            d.notes ?? null,
+            d.status,
+            d.created_at || new Date().toISOString(),
+            d.updated_at || new Date().toISOString(),
+          ]
+        );
+      }
+    }
+
+    // 5. Insert Budgets
+    if (data.budgets && Array.isArray(data.budgets)) {
+      for (const b of data.budgets) {
+        await db.runAsync(
+          `INSERT OR REPLACE INTO budgets (id, user_id, category_id, month, year, limit_amount_paise, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+          [
+            b.id,
+            b.user_id || "local-user",
+            b.category_id,
+            b.month,
+            b.year,
+            b.limit_amount_paise,
+            b.created_at || new Date().toISOString(),
+            b.updated_at || new Date().toISOString(),
+          ]
+        );
+      }
+    }
+
+    // 6. Insert Monthly Ceilings
+    if (data.overallMonthlyBudgets && typeof data.overallMonthlyBudgets === "object") {
+      for (const [key, limit] of Object.entries(data.overallMonthlyBudgets)) {
+        const [yearStr, monthStr] = key.split("-");
+        const year = parseInt(yearStr);
+        const month = parseInt(monthStr);
+        if (!isNaN(year) && !isNaN(month)) {
+          await db.runAsync(
+            `INSERT OR REPLACE INTO monthly_ceilings (id, user_id, month, year, limit_amount_paise, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?);`,
+            [
+              `ceil-${year}-${month}`,
+              "local-user",
+              month,
+              year,
+              limit,
+              new Date().toISOString(),
+              new Date().toISOString(),
+            ]
+          );
+        }
+      }
+    }
+
+    // 7. Insert Custom Platforms
+    if (data.customPlatforms && Array.isArray(data.customPlatforms)) {
+      for (const p of data.customPlatforms) {
+        if (p && typeof p === "string") {
+          await db.runAsync(
+            `INSERT OR IGNORE INTO custom_platforms (id, name, created_at)
+             VALUES (?, ?, ?);`,
+            [`p-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, p.trim(), new Date().toISOString()]
+          );
+        }
+      }
+    }
+
+    // 8. Insert Subscriptions
+    if (data.subscriptions && Array.isArray(data.subscriptions)) {
+      for (const s of data.subscriptions) {
+        await db.runAsync(
+          `INSERT OR REPLACE INTO subscriptions (id, user_id, name, amount_paise, billing_cycle, billing_day, next_billing_date, category_id, account_id, platform, payment_mode, upi_app, status, auto_log, notes, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+          [
+            s.id,
+            s.user_id || "local",
+            s.name,
+            s.amount_paise,
+            s.billing_cycle,
+            s.billing_day,
+            s.next_billing_date,
+            s.category_id ?? null,
+            s.account_id ?? null,
+            s.platform ?? null,
+            s.payment_mode ?? null,
+            s.upi_app ?? null,
+            s.status,
+            s.auto_log ? 1 : 0,
+            s.notes ?? null,
+            s.created_at || new Date().toISOString(),
+            s.updated_at || new Date().toISOString(),
+          ]
+        );
+      }
+    }
+  });
+}

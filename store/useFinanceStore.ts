@@ -15,6 +15,8 @@ import type { SQLiteDatabase } from "expo-sqlite";
 import { Account, Category, Transaction, Budget, Debt, DebtStatus, Subscription, SubscriptionStatus } from "@/types";
 import {
   hydrateAll,
+  HydratedState,
+  restoreDatabaseSnapshot,
   insertAccount,
   updateAccountDb,
   deleteAccountDb,
@@ -89,6 +91,8 @@ interface FinanceStoreState {
   updateSubscription: (id: string, updates: Partial<Subscription>) => void;
   deleteSubscription: (id: string) => void;
   toggleSubscriptionStatus: (id: string, status: SubscriptionStatus) => void;
+  // Restore
+  restoreFromBackup: (data: HydratedState) => Promise<void>;
 }
 
 // ───────────────────────────── Store ─────────────────────────────
@@ -637,6 +641,18 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
       updateSubscriptionDb(db, id, { status }).catch((e) =>
         console.error("[DB] Failed to toggle subscription status:", e)
       );
+    }
+  },
+
+  // ───── Full Restore from Backup ─────
+  restoreFromBackup: async (data) => {
+    const db = get()._db;
+    if (db) {
+      await restoreDatabaseSnapshot(db, data);
+      const rehydrated = await hydrateAll(db);
+      set({ ...rehydrated });
+    } else {
+      set({ ...data });
     }
   },
 }));
