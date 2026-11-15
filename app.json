@@ -17,7 +17,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.k10here.finn"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -27,6 +28,16 @@
       "expo-status-bar",
       "expo-secure-store",
       "expo-sqlite"
-    ]
+    ],
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "8728dbb3-efe5-4d05-bbea-399a34accaed"
+      }
+    }
   }
 }
