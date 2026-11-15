@@ -7,7 +7,6 @@ import {
   PieChart,
   Wallet,
   User,
-  Calendar,
 } from "lucide-react-native";
 import { Platform, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -21,22 +20,17 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarShowLabel: true,
         tabBarStyle: {
-          position: "absolute",
-          bottom: Platform.OS === "ios" ? Math.max(insets.bottom, 14) : 14,
-          left: 12,
-          right: 12,
-          height: 64,
           backgroundColor: "#121214",
-          borderRadius: 32,
-          borderWidth: 1,
-          borderColor: "rgba(255, 200, 59, 0.25)",
-          elevation: 16,
+          borderTopColor: "#27272a",
+          borderTopWidth: 1,
+          height: Platform.OS === "ios" ? 82 + insets.bottom : 64 + Math.max(insets.bottom, 6),
+          paddingBottom: Platform.OS === "ios" ? insets.bottom + 4 : Math.max(insets.bottom, 6),
+          paddingTop: 8,
+          elevation: 12,
           shadowColor: "#000000",
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.4,
-          shadowRadius: 16,
-          paddingBottom: 6,
-          paddingTop: 6,
+          shadowOffset: { width: 0, height: -3 },
+          shadowOpacity: 0.25,
+          shadowRadius: 8,
         },
         tabBarActiveTintColor: "#FFC83B",
         tabBarInactiveTintColor: "#71717A",
@@ -99,7 +93,7 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* 3. Debts & Udhar (Explicit user request for dedicated nav bar section) */}
+      {/* 3. Debts & Udhar */}
       <Tabs.Screen
         name="debts"
         options={{
@@ -177,7 +171,7 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* 6. Settings & Profile (Explicit user request for visible tab) */}
+      {/* 6. Settings & Profile */}
       <Tabs.Screen
         name="settings"
         options={{
@@ -203,7 +197,7 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* Calendar Audit (accessible via Ledger & Dashboard) */}
+      {/* Calendar (accessible via Ledger & Dashboard) */}
       <Tabs.Screen
         name="calendar"
         options={{

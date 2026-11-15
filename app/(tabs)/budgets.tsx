@@ -14,40 +14,47 @@ import {
   Target,
   Trash2,
   X,
-  AlertTriangle,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
-  CheckCircle2,
   Edit2,
-  Scale,
   TrendingDown,
   TrendingUp,
+  Sparkles,
+  PieChart,
   Layers,
-  ShieldCheck,
-  Zap,
+  CheckCircle2,
+  AlertCircle,
+  Utensils,
+  ShoppingBag,
+  Car,
+  Film,
+  Receipt,
+  HeartPulse,
+  GraduationCap,
+  ShoppingCart,
+  Plane,
+  Smile,
+  MoreHorizontal,
 } from "lucide-react-native";
 import { Input } from "@/components/ui/input";
 import { Caption } from "@/components/ui/typography";
 import { useFinanceStore } from "@/store/useFinanceStore";
 import { formatCurrencyFromPaise, rupeesToPaise } from "@/lib/utils";
-
-// Categorization helper for the 50/30/20 Rule
-const NEEDS_CATEGORIES = ["Bills", "Groceries", "Transportation", "Health", "Education"];
-const WANTS_CATEGORIES = ["Food", "Entertainment", "Shopping", "Personal Care", "Travel"];
+import { Budget } from "@/types";
 
 export default function BudgetsScreen() {
   const insets = useSafeAreaInsets();
-  const [activeTab, setActiveTab] = useState<"plan" | "reality" | "50-30-20">("plan");
+  const [activeTab, setActiveTab] = useState<"slices" | "reality">("slices");
 
   // Modals
-  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [sliceModalVisible, setSliceModalVisible] = useState(false);
   const [ceilingModalVisible, setCeilingModalVisible] = useState(false);
+  const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [limitStr, setLimitStr] = useState("");
   const [ceilingStr, setCeilingStr] = useState("");
 
-  // Selected planning month
-  const [selectedMonthOffset, setSelectedMonthOffset] = useState(0);
+  // Month navigation
+  const [monthOffset, setMonthOffset] = useState(0);
 
   const budgets = useFinanceStore((s) => s.budgets);
   const categories = useFinanceStore((s) => s.categories);
@@ -61,20 +68,11 @@ export default function BudgetsScreen() {
   const [selectedCatId, setSelectedCatId] = useState(expenseCategories[0]?.id || "");
 
   const now = new Date();
-  const targetDate = new Date(now.getFullYear(), now.getMonth() + selectedMonthOffset, 1);
+  const targetDate = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
   const currentMonth = targetDate.getMonth();
   const currentYear = targetDate.getFullYear();
   const monthNum = currentMonth + 1;
   const monthKey = `${currentYear}-${monthNum}`;
-
-  // Monthly income for the target month
-  const monthlyIncomePaise =
-    transactions
-      .filter((t) => {
-        const d = new Date(t.transaction_date);
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear && t.type === "income";
-      })
-      .reduce((sum, t) => sum + t.amount_paise, 0) || rupeesToPaise(120000);
 
   // Actual spending per category for selected month
   const categorySpendingMap = transactions.reduce((acc, tx) => {
@@ -98,7 +96,7 @@ export default function BudgetsScreen() {
     0
   );
 
-  // Top-Down Budget Ceiling (User defines this first, fallback to sum of categories or default ₹60k)
+  // Top-Down Budget Ceiling (fallback: allocated sum or default ₹60k)
   const userDefinedCeilingPaise =
     overallMonthlyBudgets[monthKey] ??
     (totalAllocatedToCategoriesPaise > 0 ? totalAllocatedToCategoriesPaise : rupeesToPaise(60000));
@@ -109,34 +107,18 @@ export default function BudgetsScreen() {
     ? Math.round((totalAllocatedToCategoriesPaise / userDefinedCeilingPaise) * 100)
     : 0;
 
-  // Reality Metrics
-  const netVariancePaise = userDefinedCeilingPaise - totalActualMonthSpendPaise;
-  const isOverallUnderBudget = netVariancePaise >= 0;
-  const realitySpendPercent = userDefinedCeilingPaise > 0
+  // Actual Spend vs Ceiling
+  const remainingCeilingPaise = Math.max(0, userDefinedCeilingPaise - totalActualMonthSpendPaise);
+  const spendPercentOfCeiling = userDefinedCeilingPaise > 0
     ? Math.min(100, Math.round((totalActualMonthSpendPaise / userDefinedCeilingPaise) * 100))
     : 0;
 
-  // Pace & Forecast
+  // Days and Safe Daily Pace
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const isCurrentMonth = selectedMonthOffset === 0;
-  const dayProgress = isCurrentMonth ? now.getDate() : daysInMonth;
-  const projectedMonthSpendPaise =
-    dayProgress > 0
-      ? Math.round((totalActualMonthSpendPaise / dayProgress) * daysInMonth)
-      : totalActualMonthSpendPaise;
-
-  // 50-30-20 Calculations
-  const targetNeedsPaise = Math.round(monthlyIncomePaise * 0.5);
-  const targetWantsPaise = Math.round(monthlyIncomePaise * 0.3);
-  const targetSavingsPaise = Math.round(monthlyIncomePaise * 0.2);
-
-  const actualNeedsSpentPaise = currentBudgets
-    .filter((b) => NEEDS_CATEGORIES.includes(b.category?.name || ""))
-    .reduce((sum, b) => sum + (categorySpendingMap[b.category_id] || 0), 0);
-
-  const actualWantsSpentPaise = currentBudgets
-    .filter((b) => WANTS_CATEGORIES.includes(b.category?.name || ""))
-    .reduce((sum, b) => sum + (categorySpendingMap[b.category_id] || 0), 0);
+  const isCurrentMonth = monthOffset === 0;
+  const today = isCurrentMonth ? now.getDate() : 1;
+  const daysRemaining = Math.max(1, daysInMonth - today + 1);
+  const safeDailyPacePaise = Math.round(remainingCeilingPaise / daysRemaining);
 
   const monthLabel = targetDate.toLocaleDateString("en-IN", {
     month: "long",
@@ -146,7 +128,7 @@ export default function BudgetsScreen() {
   const handleSaveCeiling = () => {
     const val = parseFloat(ceilingStr);
     if (isNaN(val) || val <= 0) {
-      Alert.alert("Invalid Amount", "Please enter a valid monthly budget ceiling greater than 0");
+      Alert.alert("Invalid Amount", "Please enter a valid monthly ceiling greater than ₹0");
       return;
     }
     setOverallMonthlyBudget(monthNum, currentYear, rupeesToPaise(val));
@@ -154,10 +136,10 @@ export default function BudgetsScreen() {
     setCeilingModalVisible(false);
   };
 
-  const handleCreateCategoryBudget = () => {
+  const handleSaveCategorySlice = () => {
     const limit = parseFloat(limitStr);
     if (isNaN(limit) || limit <= 0) {
-      Alert.alert("Invalid Limit", "Please enter a valid budget limit greater than 0");
+      Alert.alert("Invalid Amount", "Please enter a budget limit greater than ₹0");
       return;
     }
 
@@ -170,7 +152,38 @@ export default function BudgetsScreen() {
     });
 
     setLimitStr("");
-    setCategoryModalVisible(false);
+    setEditingBudget(null);
+    setSliceModalVisible(false);
+  };
+
+  const handleOpenEditSlice = (b: Budget) => {
+    setEditingBudget(b);
+    setSelectedCatId(b.category_id);
+    setLimitStr((b.limit_amount_paise / 100).toString());
+    setSliceModalVisible(true);
+  };
+
+  const handleDeleteSlice = (id: string, catName: string) => {
+    Alert.alert("Remove Slice", `Remove budget for "${catName}"?`, [
+      { text: "Cancel", style: "cancel" },
+      { text: "Remove", style: "destructive", onPress: () => deleteBudget(id) },
+    ]);
+  };
+
+  const getCategoryIcon = (iconName?: string) => {
+    switch (iconName) {
+      case "Utensils": return <Utensils size={18} color="#f97316" />;
+      case "ShoppingBag": return <ShoppingBag size={18} color="#ec4899" />;
+      case "Car": return <Car size={18} color="#3b82f6" />;
+      case "Film": return <Film size={18} color="#a855f7" />;
+      case "Receipt": return <Receipt size={18} color="#eab308" />;
+      case "HeartPulse": return <HeartPulse size={18} color="#ef4444" />;
+      case "GraduationCap": return <GraduationCap size={18} color="#06b6d4" />;
+      case "ShoppingCart": return <ShoppingCart size={18} color="#84cc16" />;
+      case "Plane": return <Plane size={18} color="#6366f1" />;
+      case "Smile": return <Smile size={18} color="#14b8a6" />;
+      default: return <MoreHorizontal size={18} color="#64748b" />;
+    }
   };
 
   return (
@@ -189,73 +202,256 @@ export default function BudgetsScreen() {
       >
         <View>
           <Caption>TOP-DOWN BUDGETING</Caption>
-          <Text className="text-xl font-black text-[#121214]">
-            Planning & Reality
+          <Text style={{ fontSize: 20, fontWeight: "900", color: "#121214" }}>
+            Monthly Budget
           </Text>
         </View>
 
         <TouchableOpacity
-          onPress={() => setCategoryModalVisible(true)}
-          className="w-9 h-9 bg-[#FFC83B] rounded-full items-center justify-center border border-[#E8BC52]"
+          onPress={() => {
+            setEditingBudget(null);
+            setLimitStr("");
+            setSelectedCatId(expenseCategories[0]?.id || "");
+            setSliceModalVisible(true);
+          }}
+          style={{
+            width: 36,
+            height: 36,
+            backgroundColor: "#FFC83B",
+            borderRadius: 18,
+            alignItems: "center",
+            justifyContent: "center",
+            borderWidth: 1,
+            borderColor: "#E8BC52",
+          }}
         >
           <Plus size={18} color="#121214" strokeWidth={2.6} />
         </TouchableOpacity>
       </View>
 
       <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 100 }}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Month Selector Bar */}
-        <View className="flex-row items-center justify-between bg-white rounded-[22px] p-2.5 border border-[#EAEAE5] mb-3 shadow-sm">
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            backgroundColor: "#FFFFFF",
+            borderRadius: 22,
+            padding: 10,
+            borderWidth: 1,
+            borderColor: "#EAEAE5",
+            marginBottom: 14,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.03,
+            shadowRadius: 2,
+            elevation: 1,
+          }}
+        >
           <TouchableOpacity
-            onPress={() => setSelectedMonthOffset(selectedMonthOffset - 1)}
-            className="w-8 h-8 rounded-full bg-[#F7F7F5] items-center justify-center"
+            onPress={() => setMonthOffset(monthOffset - 1)}
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 17,
+              backgroundColor: "#F7F7F5",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
             <ChevronLeft size={16} color="#121214" strokeWidth={2.5} />
           </TouchableOpacity>
 
-          <Text className="text-sm font-black text-[#121214]">
-            {monthLabel} {selectedMonthOffset === 0 ? "(Current)" : ""}
+          <Text style={{ fontSize: 14, fontWeight: "900", color: "#121214" }}>
+            {monthLabel} {isCurrentMonth ? "(This Month)" : ""}
           </Text>
 
           <TouchableOpacity
-            onPress={() => setSelectedMonthOffset(selectedMonthOffset + 1)}
-            className="w-8 h-8 rounded-full bg-[#F7F7F5] items-center justify-center"
+            onPress={() => setMonthOffset(monthOffset + 1)}
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 17,
+              backgroundColor: "#F7F7F5",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
             <ChevronRight size={16} color="#121214" strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
 
-        {/* 3-Way Navigation Pill: Top-Down Plan | Expectations vs Reality | 50-30-20 Rule */}
-        <View style={{ flexDirection: "row", padding: 4, backgroundColor: "#EAEAE5", borderRadius: 9999, marginBottom: 14 }}>
+        {/* Master Ceiling Envelope Card */}
+        <View
+          style={{
+            backgroundColor: "#F6CB68",
+            borderRadius: 26,
+            padding: 20,
+            marginBottom: 16,
+            borderWidth: 1,
+            borderColor: "#E8BC52",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.05,
+            shadowRadius: 4,
+            elevation: 2,
+          }}
+        >
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+            <View>
+              <Text style={{ fontSize: 11, fontWeight: "800", color: "#121214", opacity: 0.7, textTransform: "uppercase" }}>
+                Monthly Spend Ceiling
+              </Text>
+              <Text style={{ fontSize: 28, fontWeight: "900", color: "#121214", marginTop: 2 }}>
+                {formatCurrencyFromPaise(userDefinedCeilingPaise)}
+              </Text>
+              <Text style={{ fontSize: 11, color: "#121214", opacity: 0.7, marginTop: 2 }}>
+                {totalActualMonthSpendPaise > 0
+                  ? `${formatCurrencyFromPaise(totalActualMonthSpendPaise)} spent so far`
+                  : "No expenses recorded yet"}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => {
+                setCeilingStr((userDefinedCeilingPaise / 100).toString());
+                setCeilingModalVisible(true);
+              }}
+              style={{
+                backgroundColor: "#121214",
+                paddingHorizontal: 12,
+                paddingVertical: 7,
+                borderRadius: 9999,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 5,
+              }}
+            >
+              <Edit2 size={11} color="#FFC83B" />
+              <Text style={{ fontSize: 11, fontWeight: "800", color: "#FFFFFF" }}>
+                Edit
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Progress bar: Actual Spent of Ceiling */}
+          <View style={{ marginBottom: 14 }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
+              <Text style={{ fontSize: 11, fontWeight: "800", color: "#121214" }}>
+                Budget Used: {spendPercentOfCeiling}%
+              </Text>
+              <Text style={{ fontSize: 11, fontWeight: "800", color: "#121214" }}>
+                {formatCurrencyFromPaise(remainingCeilingPaise)} left
+              </Text>
+            </View>
+
+            <View style={{ width: "100%", height: 8, backgroundColor: "rgba(0,0,0,0.12)", borderRadius: 4, overflow: "hidden" }}>
+              <View
+                style={{
+                  width: `${spendPercentOfCeiling}%`,
+                  height: "100%",
+                  backgroundColor: spendPercentOfCeiling > 90 ? "#DC2626" : "#121214",
+                  borderRadius: 4,
+                }}
+              />
+            </View>
+          </View>
+
+          {/* Quick Metrics Row */}
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: "#FFFFFF",
+                borderRadius: 16,
+                padding: 10,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ fontSize: 10, fontWeight: "700", color: "#71717A" }}>
+                Allocated Slices
+              </Text>
+              <Text style={{ fontSize: 13, fontWeight: "900", color: "#121214", marginTop: 2 }}>
+                {formatCurrencyFromPaise(totalAllocatedToCategoriesPaise)}
+              </Text>
+            </View>
+
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: isOverAllocated ? "#FEECEB" : "#FFFFFF",
+                borderRadius: 16,
+                padding: 10,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ fontSize: 10, fontWeight: "700", color: isOverAllocated ? "#DC2626" : "#71717A" }}>
+                {isOverAllocated ? "Over-Allocated" : "Reserve Buffer"}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: "900",
+                  color: isOverAllocated ? "#DC2626" : "#059669",
+                  marginTop: 2,
+                }}
+              >
+                {formatCurrencyFromPaise(Math.abs(unallocatedBufferPaise))}
+              </Text>
+            </View>
+
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: "#FFFFFF",
+                borderRadius: 16,
+                padding: 10,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ fontSize: 10, fontWeight: "700", color: "#71717A" }}>
+                Daily Pace
+              </Text>
+              <Text style={{ fontSize: 13, fontWeight: "900", color: "#121214", marginTop: 2 }}>
+                {formatCurrencyFromPaise(safeDailyPacePaise)}/d
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* 2-Way Tab Bar: Category Slices vs Reality Breakdown */}
+        <View style={{ flexDirection: "row", backgroundColor: "#EAEAE5", borderRadius: 9999, padding: 4, marginBottom: 16 }}>
           <TouchableOpacity
-            onPress={() => setActiveTab("plan")}
+            onPress={() => setActiveTab("slices")}
             style={{
               flex: 1,
-              paddingVertical: 8,
+              paddingVertical: 9,
               borderRadius: 9999,
               alignItems: "center",
-              backgroundColor: activeTab === "plan" ? "#121214" : "transparent",
+              backgroundColor: activeTab === "slices" ? "#121214" : "transparent",
             }}
           >
             <Text
               style={{
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: "800",
-                color: activeTab === "plan" ? "#FFFFFF" : "#71717A",
+                color: activeTab === "slices" ? "#FFFFFF" : "#71717A",
               }}
             >
-              Plan Envelope
+              Category Envelopes ({currentBudgets.length})
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => setActiveTab("reality")}
             style={{
-              flex: 1.25,
-              paddingVertical: 8,
+              flex: 1,
+              paddingVertical: 9,
               borderRadius: 9999,
               alignItems: "center",
               backgroundColor: activeTab === "reality" ? "#FFC83B" : "transparent",
@@ -263,227 +459,69 @@ export default function BudgetsScreen() {
           >
             <Text
               style={{
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: "800",
                 color: "#121214",
               }}
             >
-              Expectation vs Reality
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => setActiveTab("50-30-20")}
-            style={{
-              flex: 0.95,
-              paddingVertical: 8,
-              borderRadius: 9999,
-              alignItems: "center",
-              backgroundColor: activeTab === "50-30-20" ? "#121214" : "transparent",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 11,
-                fontWeight: "800",
-                color: activeTab === "50-30-20" ? "#FFFFFF" : "#71717A",
-              }}
-            >
-              50/30/20
+              Planned vs Reality
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* ----------------- TAB 1: TOP-DOWN PLAN ENVELOPE ----------------- */}
-        {activeTab === "plan" && (
+        {/* ---------------- TAB 1: CATEGORY SLICES ---------------- */}
+        {activeTab === "slices" && (
           <View>
-            {/* Top-Down Budget Master Envelope Card */}
-            <View
-              style={{
-                backgroundColor: "#F6CB68",
-                borderRadius: 28,
-                padding: 20,
-                marginBottom: 16,
-                borderWidth: 1,
-                borderColor: "#E8BC52",
-              }}
-            >
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-                <View>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                    <Text style={{ fontSize: 11, fontWeight: "800", color: "#121214", opacity: 0.7, textTransform: "uppercase" }}>
-                      Monthly Ceiling (Top-Down)
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => {
-                        setCeilingStr((userDefinedCeilingPaise / 100).toString());
-                        setCeilingModalVisible(true);
-                      }}
-                      style={{ padding: 2 }}
-                    >
-                      <Edit2 size={13} color="#121214" />
-                    </TouchableOpacity>
-                  </View>
-                  <Text style={{ fontSize: 26, fontWeight: "900", color: "#121214", marginTop: 2 }}>
-                    {formatCurrencyFromPaise(userDefinedCeilingPaise)}
-                  </Text>
-                  <Text style={{ fontSize: 11, color: "#121214", opacity: 0.75, marginTop: 2 }}>
-                    Total spend ceiling assigned by you
-                  </Text>
-                </View>
-
-                <TouchableOpacity
-                  onPress={() => {
-                    setCeilingStr((userDefinedCeilingPaise / 100).toString());
-                    setCeilingModalVisible(true);
-                  }}
-                  style={{
-                    backgroundColor: "#121214",
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 9999,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 4,
-                  }}
-                >
-                  <Edit2 size={11} color="#FFFFFF" />
-                  <Text style={{ fontSize: 11, fontWeight: "800", color: "#FFFFFF" }}>
-                    Edit Ceiling
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Envelope Division Bar */}
-              <View style={{ marginBottom: 14 }}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
-                  <Text style={{ fontSize: 11, fontWeight: "800", color: "#121214" }}>
-                    Envelope Allocated: {allocationPercent}%
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 11,
-                      fontWeight: "800",
-                      color: isOverAllocated ? "#EF4444" : "#121214",
-                    }}
-                  >
-                    {isOverAllocated
-                      ? `Over by ${formatCurrencyFromPaise(Math.abs(unallocatedBufferPaise))}`
-                      : `${formatCurrencyFromPaise(unallocatedBufferPaise)} Buffer Remaining`}
-                  </Text>
-                </View>
-
-                <View style={{ width: "100%", height: 8, backgroundColor: "rgba(0,0,0,0.12)", borderRadius: 4, overflow: "hidden" }}>
-                  <View
-                    style={{
-                      width: `${Math.min(100, allocationPercent)}%`,
-                      height: "100%",
-                      backgroundColor: isOverAllocated ? "#EF4444" : "#121214",
-                      borderRadius: 4,
-                    }}
-                  />
-                </View>
-              </View>
-
-              {/* Envelope Breakdown Metrics */}
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                <View
-                  style={{
-                    flex: 1,
-                    backgroundColor: "#FFFFFF",
-                    borderRadius: 16,
-                    paddingVertical: 10,
-                    paddingHorizontal: 8,
-                    alignItems: "center",
-                  }}
-                >
-                  <Text style={{ fontSize: 10, fontWeight: "700", color: "#71717A" }}>Divided Slices</Text>
-                  <Text style={{ fontSize: 13, fontWeight: "900", color: "#121214", marginTop: 2 }}>
-                    {formatCurrencyFromPaise(totalAllocatedToCategoriesPaise)}
-                  </Text>
-                </View>
-
-                <View
-                  style={{
-                    flex: 1,
-                    backgroundColor: isOverAllocated ? "#FEECEB" : "#FFFFFF",
-                    borderRadius: 16,
-                    paddingVertical: 10,
-                    paddingHorizontal: 8,
-                    alignItems: "center",
-                  }}
-                >
-                  <Text style={{ fontSize: 10, fontWeight: "700", color: isOverAllocated ? "#EF4444" : "#71717A" }}>
-                    {isOverAllocated ? "Over-Allocated" : "Unallocated Buffer"}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "900",
-                      color: isOverAllocated ? "#EF4444" : "#10B981",
-                      marginTop: 2,
-                    }}
-                  >
-                    {formatCurrencyFromPaise(Math.abs(unallocatedBufferPaise))}
-                  </Text>
-                </View>
-
-                <View
-                  style={{
-                    flex: 1,
-                    backgroundColor: "#FFFFFF",
-                    borderRadius: 16,
-                    paddingVertical: 10,
-                    paddingHorizontal: 8,
-                    alignItems: "center",
-                  }}
-                >
-                  <Text style={{ fontSize: 10, fontWeight: "700", color: "#71717A" }}>Categories</Text>
-                  <Text style={{ fontSize: 13, fontWeight: "900", color: "#121214", marginTop: 2 }}>
-                    {currentBudgets.length} Envelopes
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Category Allocations Section */}
-            <View className="flex-row items-center justify-between mb-3">
-              <View>
-                <Text className="text-sm font-black text-[#121214]">
-                  Divided Category Envelopes
-                </Text>
-                <Caption>Slices of your {formatCurrencyFromPaise(userDefinedCeilingPaise)} ceiling</Caption>
-              </View>
-
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12, paddingHorizontal: 2 }}>
+              <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A", textTransform: "uppercase", letterSpacing: 0.6 }}>
+                Active Category Slices
+              </Text>
               <TouchableOpacity
-                onPress={() => setCategoryModalVisible(true)}
-                className="flex-row items-center gap-1 bg-[#121214] px-3 py-1.5 rounded-full"
+                onPress={() => {
+                  setEditingBudget(null);
+                  setLimitStr("");
+                  setSliceModalVisible(true);
+                }}
               >
-                <Plus size={12} color="#FFFFFF" strokeWidth={2.5} />
-                <Text className="text-xs font-bold text-white">Add Slice</Text>
+                <Text style={{ fontSize: 11, fontWeight: "800", color: "#D97706" }}>
+                  + New Slice
+                </Text>
               </TouchableOpacity>
             </View>
 
             {currentBudgets.length === 0 ? (
-              <View className="bg-white rounded-[24px] items-center py-10 px-6 border border-[#EAEAE5] shadow-sm">
-                <Target size={36} color="#A1A1AA" />
-                <Text className="text-sm font-bold text-[#121214] mt-3">
-                  No Categories Allocated Yet
+              <View
+                style={{
+                  backgroundColor: "#FFFFFF",
+                  borderRadius: 24,
+                  padding: 36,
+                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: "#EAEAE5",
+                }}
+              >
+                <Target size={32} color="#D4D4D8" />
+                <Text style={{ fontSize: 14, fontWeight: "800", color: "#121214", marginTop: 10 }}>
+                  No Category Envelopes Yet
                 </Text>
-                <Caption className="text-center mt-1 mb-4">
-                  Divide your {formatCurrencyFromPaise(userDefinedCeilingPaise)} ceiling into targeted category budgets (Groceries, Food, Bills).
-                </Caption>
+                <Text style={{ fontSize: 12, color: "#71717A", textAlign: "center", marginTop: 4, marginBottom: 16 }}>
+                  Divide your {formatCurrencyFromPaise(userDefinedCeilingPaise)} monthly budget into specific slices (Food, Groceries, Travel).
+                </Text>
                 <TouchableOpacity
-                  onPress={() => setCategoryModalVisible(true)}
+                  onPress={() => {
+                    setEditingBudget(null);
+                    setLimitStr("");
+                    setSliceModalVisible(true);
+                  }}
                   style={{
-                    backgroundColor: "#FFC83B",
-                    paddingVertical: 10,
+                    backgroundColor: "#121214",
+                    paddingVertical: 11,
                     paddingHorizontal: 20,
                     borderRadius: 9999,
                   }}
                 >
-                  <Text style={{ fontSize: 12, fontWeight: "800", color: "#121214" }}>
-                    + Allocate First Slice
+                  <Text style={{ fontSize: 12, fontWeight: "800", color: "#FFFFFF" }}>
+                    + Add First Slice
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -491,82 +529,118 @@ export default function BudgetsScreen() {
               currentBudgets.map((b) => {
                 const spent = categorySpendingMap[b.category_id] || 0;
                 const limit = b.limit_amount_paise;
-                const percentOfCeiling = userDefinedCeilingPaise > 0
-                  ? Math.round((limit / userDefinedCeilingPaise) * 100)
-                  : 0;
                 const percentSpent = Math.min(100, Math.round((spent / limit) * 100));
+                const remaining = limit - spent;
                 const isOver = spent > limit;
+                const cat = b.category;
 
                 return (
                   <View
                     key={b.id}
-                    className="bg-white rounded-[24px] p-4 mb-3 border border-[#EAEAE5] shadow-sm"
+                    style={{
+                      backgroundColor: "#FFFFFF",
+                      borderRadius: 22,
+                      padding: 16,
+                      marginBottom: 12,
+                      borderWidth: 1,
+                      borderColor: isOver ? "#FCA5A5" : "#EAEAE5",
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.03,
+                      shadowRadius: 2,
+                      elevation: 1,
+                    }}
                   >
-                    <View className="flex-row items-center justify-between mb-2">
-                      <View className="flex-row items-center gap-2">
+                    {/* Top Row: Icon + Name + Actions */}
+                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                         <View
-                          className="w-3.5 h-3.5 rounded-full"
-                          style={{ backgroundColor: b.category?.color || "#FFC83B" }}
-                        />
-                        <Text className="text-sm font-bold text-[#121214]">
-                          {b.category?.name || "Category"}
-                        </Text>
-                        <View className="bg-[#F7F7F5] px-2 py-0.5 rounded-full border border-[#EAEAE5]">
-                          <Text className="text-[10px] font-bold text-[#71717A]">
-                            {percentOfCeiling}% of ceiling
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 14,
+                            backgroundColor: cat?.color ? `${cat.color}15` : "#F7F7F5",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {getCategoryIcon(cat?.icon)}
+                        </View>
+                        <View>
+                          <Text style={{ fontSize: 14, fontWeight: "800", color: "#121214" }}>
+                            {cat?.name || "Category"}
+                          </Text>
+                          <Text style={{ fontSize: 11, color: "#71717A", marginTop: 1 }}>
+                            {Math.round((limit / userDefinedCeilingPaise) * 100)}% of ceiling
                           </Text>
                         </View>
                       </View>
 
-                      <View className="flex-row items-center gap-2">
+                      {/* Edit / Delete */}
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                         <TouchableOpacity
-                          onPress={() => {
-                            setSelectedCatId(b.category_id);
-                            setLimitStr((b.limit_amount_paise / 100).toString());
-                            setCategoryModalVisible(true);
+                          onPress={() => handleOpenEditSlice(b)}
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 16,
+                            backgroundColor: "#F7F7F5",
+                            alignItems: "center",
+                            justifyContent: "center",
                           }}
-                          className="p-1 opacity-40 active:opacity-100"
                         >
                           <Edit2 size={13} color="#121214" />
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                          onPress={() => deleteBudget(b.id)}
-                          className="p-1 opacity-40 active:opacity-100"
+                          onPress={() => handleDeleteSlice(b.id, cat?.name || "budget")}
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 16,
+                            backgroundColor: "#FEECEB",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
                         >
                           <Trash2 size={13} color="#EF4444" />
                         </TouchableOpacity>
                       </View>
                     </View>
 
-                    {/* Progress Bar of actual spend against allocation */}
-                    <View className="w-full bg-[#F0EFEA] rounded-full h-2 overflow-hidden my-2">
-                      <View
-                        className="h-2 rounded-full"
-                        style={{
-                          width: `${percentSpent}%`,
-                          backgroundColor: isOver ? "#EF4444" : b.category?.color || "#121214",
-                        }}
-                      />
-                    </View>
-
-                    <View className="flex-row justify-between items-center mt-1">
-                      <Text className="text-xs text-[#71717A]">
-                        Allocated:{" "}
-                        <Text className="font-bold text-[#121214]">
-                          {formatCurrencyFromPaise(limit)}
+                    {/* Progress Bar */}
+                    <View style={{ marginBottom: 10 }}>
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 5 }}>
+                        <Text style={{ fontSize: 12, fontWeight: "700", color: "#121214" }}>
+                          {formatCurrencyFromPaise(spent)} of {formatCurrencyFromPaise(limit)}
                         </Text>
-                      </Text>
-                      <Text className="text-xs text-[#71717A]">
-                        Spent:{" "}
                         <Text
-                          className={`font-bold ${
-                            isOver ? "text-red-500" : "text-[#121214]"
-                          }`}
+                          style={{
+                            fontSize: 11,
+                            fontWeight: "800",
+                            color: isOver ? "#DC2626" : percentSpent > 80 ? "#D97706" : "#059669",
+                          }}
                         >
-                          {formatCurrencyFromPaise(spent)} ({percentSpent}%)
+                          {isOver
+                            ? `Over by ${formatCurrencyFromPaise(spent - limit)}`
+                            : `${formatCurrencyFromPaise(remaining)} left (${100 - percentSpent}%)`}
                         </Text>
-                      </Text>
+                      </View>
+
+                      <View style={{ height: 6, backgroundColor: "#F0EFEA", borderRadius: 3, overflow: "hidden" }}>
+                        <View
+                          style={{
+                            height: 6,
+                            borderRadius: 3,
+                            width: `${percentSpent}%`,
+                            backgroundColor: isOver
+                              ? "#DC2626"
+                              : percentSpent > 80
+                              ? "#F59E0B"
+                              : "#10B981",
+                          }}
+                        />
+                      </View>
                     </View>
                   </View>
                 );
@@ -575,430 +649,187 @@ export default function BudgetsScreen() {
           </View>
         )}
 
-        {/* ----------------- TAB 2: EXPECTATIONS VS REALITY ----------------- */}
+        {/* ---------------- TAB 2: PLANNED VS REALITY ---------------- */}
         {activeTab === "reality" && (
           <View>
-            {/* Net Scorecard Card */}
+            <View style={{ marginBottom: 14, paddingHorizontal: 2 }}>
+              <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A", textTransform: "uppercase", letterSpacing: 0.6 }}>
+                Variance Audit & Reality Check
+              </Text>
+            </View>
+
+            {/* Reality High-level Card */}
             <View
               style={{
-                backgroundColor: isOverallUnderBudget ? "#F0FDF4" : "#FEF2F2",
-                borderColor: isOverallUnderBudget ? "#BBF7D0" : "#FECACA",
+                backgroundColor: "#FFFFFF",
+                borderRadius: 22,
+                padding: 16,
+                marginBottom: 14,
                 borderWidth: 1,
-                borderRadius: 28,
-                padding: 20,
-                marginBottom: 16,
+                borderColor: "#EAEAE5",
               }}
             >
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <View>
-                  <Text
-                    style={{
-                      fontSize: 11,
-                      fontWeight: "800",
-                      color: isOverallUnderBudget ? "#15803D" : "#B91C1C",
-                      textTransform: "uppercase",
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    Expectation vs Reality Outcome
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 24,
-                      fontWeight: "900",
-                      color: isOverallUnderBudget ? "#166534" : "#991B1B",
-                      marginTop: 2,
-                    }}
-                  >
-                    {isOverallUnderBudget
-                      ? `+${formatCurrencyFromPaise(netVariancePaise)} Saved`
-                      : `-${formatCurrencyFromPaise(Math.abs(netVariancePaise))} Over Budget`}
-                  </Text>
-                </View>
-
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <Text style={{ fontSize: 13, fontWeight: "800", color: "#121214" }}>
+                  Net Variance This Month
+                </Text>
                 <View
                   style={{
-                    backgroundColor: isOverallUnderBudget ? "#DCFCE7" : "#FEE2E2",
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 9999,
-                    borderWidth: 1,
-                    borderColor: isOverallUnderBudget ? "#86EFAC" : "#FCA5A5",
+                    backgroundColor: remainingCeilingPaise > 0 ? "#E6FBF2" : "#FEECEB",
+                    paddingHorizontal: 10,
+                    paddingVertical: 4,
+                    borderRadius: 999,
                   }}
                 >
                   <Text
                     style={{
                       fontSize: 11,
-                      fontWeight: "900",
-                      color: isOverallUnderBudget ? "#15803D" : "#B91C1C",
+                      fontWeight: "800",
+                      color: remainingCeilingPaise > 0 ? "#059669" : "#DC2626",
                     }}
                   >
-                    {isOverallUnderBudget ? "UNDER BUDGET" : "DEFICIT"}
+                    {remainingCeilingPaise > 0 ? "Under Ceiling" : "Exceeded Ceiling"}
                   </Text>
                 </View>
               </View>
 
-              {/* Side-by-side Expectation vs Reality comparative meters */}
-              <View style={{ marginBottom: 14 }}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-                  <Text style={{ fontSize: 11, fontWeight: "700", color: "#52525B" }}>
-                    Expected Ceiling: {formatCurrencyFromPaise(userDefinedCeilingPaise)}
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <View style={{ flex: 1, backgroundColor: "#F7F7F5", borderRadius: 14, padding: 12 }}>
+                  <Text style={{ fontSize: 10, fontWeight: "800", color: "#71717A", textTransform: "uppercase" }}>
+                    Planned Ceiling
                   </Text>
-                  <Text style={{ fontSize: 11, fontWeight: "800", color: "#121214" }}>
-                    Reality Spent: {formatCurrencyFromPaise(totalActualMonthSpendPaise)} ({realitySpendPercent}%)
+                  <Text style={{ fontSize: 16, fontWeight: "900", color: "#121214", marginTop: 2 }}>
+                    {formatCurrencyFromPaise(userDefinedCeilingPaise)}
                   </Text>
                 </View>
 
-                {/* Comparative Dual Bar */}
-                <View style={{ width: "100%", height: 10, backgroundColor: "#E4E4E7", borderRadius: 5, overflow: "hidden" }}>
-                  <View
-                    style={{
-                      width: `${realitySpendPercent}%`,
-                      height: "100%",
-                      backgroundColor: isOverallUnderBudget ? "#16A34A" : "#DC2626",
-                      borderRadius: 5,
-                    }}
-                  />
-                </View>
-              </View>
-
-              {/* Projection & Pace Insight */}
-              <View
-                style={{
-                  backgroundColor: "#FFFFFF",
-                  borderRadius: 16,
-                  padding: 12,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 10,
-                }}
-              >
-                <Zap size={18} color="#D97706" />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 12, fontWeight: "800", color: "#121214" }}>
-                    Month-End Reality Projection
+                <View style={{ flex: 1, backgroundColor: "#F7F7F5", borderRadius: 14, padding: 12 }}>
+                  <Text style={{ fontSize: 10, fontWeight: "800", color: "#71717A", textTransform: "uppercase" }}>
+                    Actual Spent
                   </Text>
-                  <Text style={{ fontSize: 11, color: "#71717A", marginTop: 1 }}>
-                    At your current burn rate, you are on track to spend{" "}
-                    <Text style={{ fontWeight: "800", color: projectedMonthSpendPaise > userDefinedCeilingPaise ? "#EF4444" : "#10B981" }}>
-                      {formatCurrencyFromPaise(projectedMonthSpendPaise)}
-                    </Text>{" "}
-                    by month end ({daysInMonth - dayProgress} days left).
+                  <Text style={{ fontSize: 16, fontWeight: "900", color: "#121214", marginTop: 2 }}>
+                    {formatCurrencyFromPaise(totalActualMonthSpendPaise)}
                   </Text>
                 </View>
               </View>
             </View>
 
-            {/* Category-by-Category Expectation vs Reality Breakdown */}
-            <Text className="text-sm font-black text-[#121214] mb-3">
-              Category Variance Breakdown
-            </Text>
-
+            {/* Per-Category Reality Breakdown */}
             {currentBudgets.length === 0 ? (
-              <View className="bg-white rounded-[24px] p-6 items-center border border-[#EAEAE5]">
-                <Scale size={32} color="#A1A1AA" />
-                <Text className="text-sm font-bold text-[#121214] mt-2">
-                  No Category Plans to Compare
+              <View style={{ backgroundColor: "#FFFFFF", borderRadius: 22, padding: 32, alignItems: "center", borderWidth: 1, borderColor: "#EAEAE5" }}>
+                <Text style={{ fontSize: 13, color: "#71717A", fontWeight: "600" }}>
+                  Allocate category slices in Tab 1 to see variances.
                 </Text>
-                <Caption className="text-center mt-1">
-                  Add category envelopes in the "Plan Envelope" tab to see category-by-category expectations vs reality.
-                </Caption>
               </View>
             ) : (
               currentBudgets.map((b) => {
-                const expectedLimit = b.limit_amount_paise;
-                const realitySpent = categorySpendingMap[b.category_id] || 0;
-                const variancePaise = expectedLimit - realitySpent;
-                const isUnder = variancePaise >= 0;
-                const percentSpent = Math.min(100, Math.round((realitySpent / expectedLimit) * 100));
+                const spent = categorySpendingMap[b.category_id] || 0;
+                const limit = b.limit_amount_paise;
+                const variance = limit - spent;
+                const isUnder = variance >= 0;
 
                 return (
                   <View
-                    key={b.id}
-                    className="bg-white rounded-[24px] p-4 mb-3 border border-[#EAEAE5] shadow-sm"
+                    key={`reality-${b.id}`}
+                    style={{
+                      backgroundColor: "#FFFFFF",
+                      borderRadius: 18,
+                      padding: 14,
+                      marginBottom: 10,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      borderWidth: 1,
+                      borderColor: "#EAEAE5",
+                    }}
                   >
-                    <View className="flex-row items-center justify-between mb-2">
-                      <View className="flex-row items-center gap-2">
-                        <View
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: b.category?.color || "#121214" }}
-                        />
-                        <Text className="text-sm font-bold text-[#121214]">
-                          {b.category?.name || "Category"}
-                        </Text>
-                      </View>
-
-                      {/* Variance Badge */}
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                       <View
                         style={{
-                          backgroundColor: isUnder ? "#DCFCE7" : "#FEE2E2",
-                          paddingHorizontal: 8,
-                          paddingVertical: 3,
-                          borderRadius: 9999,
+                          width: 36,
+                          height: 36,
+                          borderRadius: 12,
+                          backgroundColor: isUnder ? "#E6FBF2" : "#FEECEB",
+                          alignItems: "center",
+                          justifyContent: "center",
                         }}
                       >
-                        <Text
-                          style={{
-                            fontSize: 11,
-                            fontWeight: "800",
-                            color: isUnder ? "#15803D" : "#B91C1C",
-                          }}
-                        >
-                          {isUnder
-                            ? `🟢 Saved ${formatCurrencyFromPaise(variancePaise)}`
-                            : `🔴 Over by ${formatCurrencyFromPaise(Math.abs(variancePaise))}`}
-                        </Text>
+                        {isUnder
+                          ? <TrendingDown size={16} color="#059669" />
+                          : <TrendingUp size={16} color="#DC2626" />
+                        }
                       </View>
-                    </View>
-
-                    {/* Comparative Dual Bar */}
-                    <View className="mb-2">
-                      <View className="w-full bg-[#F4F4F0] rounded-full h-2.5 overflow-hidden">
-                        <View
-                          className="h-2.5 rounded-full"
-                          style={{
-                            width: `${percentSpent}%`,
-                            backgroundColor: isUnder ? (b.category?.color || "#10B981") : "#EF4444",
-                          }}
-                        />
-                      </View>
-                    </View>
-
-                    {/* Side-by-side Expectation vs Reality Metrics */}
-                    <View className="flex-row justify-between items-center pt-1 border-t border-[#F4F4F0]">
                       <View>
-                        <Text className="text-[10px] text-[#71717A] uppercase font-bold">Expectation (Planned)</Text>
-                        <Text className="text-xs font-black text-[#121214]">
-                          {formatCurrencyFromPaise(expectedLimit)}
+                        <Text style={{ fontSize: 13, fontWeight: "800", color: "#121214" }}>
+                          {b.category?.name}
+                        </Text>
+                        <Text style={{ fontSize: 11, color: "#71717A", marginTop: 1 }}>
+                          Planned {formatCurrencyFromPaise(limit)} · Spent {formatCurrencyFromPaise(spent)}
                         </Text>
                       </View>
+                    </View>
 
-                      <View className="items-center">
-                        <Text className="text-[10px] text-[#71717A] uppercase font-bold">Reality (Spent)</Text>
-                        <Text
-                          className={`text-xs font-black ${
-                            isUnder ? "text-[#121214]" : "text-red-600"
-                          }`}
-                        >
-                          {formatCurrencyFromPaise(realitySpent)} ({percentSpent}%)
-                        </Text>
-                      </View>
-
-                      <View className="items-end">
-                        <Text className="text-[10px] text-[#71717A] uppercase font-bold">Variance</Text>
-                        <Text
-                          className={`text-xs font-black ${
-                            isUnder ? "text-emerald-600" : "text-red-600"
-                          }`}
-                        >
-                          {isUnder ? `+${formatCurrencyFromPaise(variancePaise)}` : `-${formatCurrencyFromPaise(Math.abs(variancePaise))}`}
-                        </Text>
-                      </View>
+                    <View style={{ alignItems: "flex-end" }}>
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          fontWeight: "900",
+                          color: isUnder ? "#059669" : "#DC2626",
+                        }}
+                      >
+                        {isUnder ? "+" : "-"}{formatCurrencyFromPaise(Math.abs(variance))}
+                      </Text>
+                      <Text style={{ fontSize: 10, color: isUnder ? "#059669" : "#DC2626", fontWeight: "700", marginTop: 1 }}>
+                        {isUnder ? "Saved" : "Exceeded"}
+                      </Text>
                     </View>
                   </View>
                 );
               })
             )}
-
-            {/* Unplanned / Out-of-Budget Reality Transactions */}
-            {(() => {
-              const budgetedCategoryIds = new Set(currentBudgets.map((b) => b.category_id));
-              const unbudgetedSpends = Object.entries(categorySpendingMap).filter(
-                ([catId, spent]) => !budgetedCategoryIds.has(catId) && spent > 0
-              );
-
-              if (unbudgetedSpends.length === 0) return null;
-
-              return (
-                <View className="mt-2 bg-[#FFFBEB] rounded-[24px] p-4 border border-[#FDE68A] mb-4">
-                  <View className="flex-row items-center gap-2 mb-2">
-                    <AlertTriangle size={16} color="#D97706" />
-                    <Text className="text-xs font-extrabold text-[#92400E]">
-                      Unbudgeted Reality Spends
-                    </Text>
-                  </View>
-                  <Text className="text-xs text-[#78350F] mb-3">
-                    These categories had spending in {monthLabel} without an allocated envelope:
-                  </Text>
-
-                  {unbudgetedSpends.map(([catId, spent]) => {
-                    const cat = categories.find((c) => c.id === catId);
-                    return (
-                      <View
-                        key={catId}
-                        className="flex-row items-center justify-between py-1.5 border-b border-[#FEF3C7]"
-                      >
-                        <Text className="text-xs font-bold text-[#121214]">
-                          {cat?.name || "Uncategorized"}
-                        </Text>
-                        <Text className="text-xs font-black text-red-600">
-                          {formatCurrencyFromPaise(spent)}
-                        </Text>
-                      </View>
-                    );
-                  })}
-                </View>
-              );
-            })()}
-          </View>
-        )}
-
-        {/* ----------------- TAB 3: 50-30-20 RULE ----------------- */}
-        {activeTab === "50-30-20" && (
-          <View className="mb-4">
-            <View className="bg-white rounded-[26px] p-5 mb-4 border border-[#EAEAE5] shadow-sm">
-              <View className="flex-row items-center gap-2 mb-2">
-                <Sparkles size={16} color="#B45309" />
-                <Text className="text-xs font-black text-[#121214] uppercase tracking-wider">
-                  50 / 30 / 20 Macro Allocation
-                </Text>
-              </View>
-              <Text className="text-xs text-[#71717A] mb-4">
-                The gold standard personal finance framework based on monthly income of{" "}
-                <Text className="font-bold text-[#121214]">
-                  {formatCurrencyFromPaise(monthlyIncomePaise)}
-                </Text>
-                .
-              </Text>
-
-              {/* Needs: 50% */}
-              <View className="mb-4 p-3.5 bg-[#F7F7F5] rounded-2xl border border-[#EAEAE5]">
-                <View className="flex-row items-center justify-between mb-1">
-                  <View className="flex-row items-center gap-1.5">
-                    <View className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                    <Text className="text-xs font-extrabold text-[#121214]">
-                      Needs (50% Target)
-                    </Text>
-                  </View>
-                  <Text className="text-xs font-black text-[#121214]">
-                    {formatCurrencyFromPaise(actualNeedsSpentPaise)} / {formatCurrencyFromPaise(targetNeedsPaise)}
-                  </Text>
-                </View>
-                <Text className="text-[11px] text-[#71717A] mb-2">
-                  Rent, Bills, Groceries, Fuel & Health Essentials
-                </Text>
-                <View className="w-full bg-[#EAEAE5] rounded-full h-1.5 overflow-hidden">
-                  <View
-                    className="h-1.5 rounded-full bg-blue-500"
-                    style={{
-                      width: `${Math.min(100, Math.round((actualNeedsSpentPaise / targetNeedsPaise) * 100))}%`,
-                    }}
-                  />
-                </View>
-              </View>
-
-              {/* Wants: 30% */}
-              <View className="mb-4 p-3.5 bg-[#F7F7F5] rounded-2xl border border-[#EAEAE5]">
-                <View className="flex-row items-center justify-between mb-1">
-                  <View className="flex-row items-center gap-1.5">
-                    <View className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                    <Text className="text-xs font-extrabold text-[#121214]">
-                      Wants (30% Target)
-                    </Text>
-                  </View>
-                  <Text className="text-xs font-black text-[#121214]">
-                    {formatCurrencyFromPaise(actualWantsSpentPaise)} / {formatCurrencyFromPaise(targetWantsPaise)}
-                  </Text>
-                </View>
-                <Text className="text-[11px] text-[#71717A] mb-2">
-                  Dining Out, Food Delivery, Movies, Shopping & Travel
-                </Text>
-                <View className="w-full bg-[#EAEAE5] rounded-full h-1.5 overflow-hidden">
-                  <View
-                    className="h-1.5 rounded-full bg-amber-500"
-                    style={{
-                      width: `${Math.min(100, Math.round((actualWantsSpentPaise / targetWantsPaise) * 100))}%`,
-                    }}
-                  />
-                </View>
-              </View>
-
-              {/* Savings & Investments: 20% */}
-              <View className="p-3.5 bg-[#F7F7F5] rounded-2xl border border-[#EAEAE5]">
-                <View className="flex-row items-center justify-between mb-1">
-                  <View className="flex-row items-center gap-1.5">
-                    <View className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                    <Text className="text-xs font-extrabold text-[#121214]">
-                      Savings & Emergency (20% Target)
-                    </Text>
-                  </View>
-                  <Text className="text-xs font-black text-emerald-600">
-                    {formatCurrencyFromPaise(targetSavingsPaise)} Target
-                  </Text>
-                </View>
-                <Text className="text-[11px] text-[#71717A] mb-2">
-                  Mutual Funds, Stocks, Emergency Reserve & Cash Buffer
-                </Text>
-                <View className="w-full bg-[#EAEAE5] rounded-full h-1.5 overflow-hidden">
-                  <View
-                    className="h-1.5 rounded-full bg-emerald-500"
-                    style={{
-                      width: "100%",
-                    }}
-                  />
-                </View>
-              </View>
-            </View>
           </View>
         )}
       </ScrollView>
 
-      {/* ----------------- MODAL: EDIT TOP-DOWN CEILING ----------------- */}
+      {/* Edit Ceiling Modal */}
       <Modal
         visible={ceilingModalVisible}
         animationType="slide"
         transparent
         onRequestClose={() => setCeilingModalVisible(false)}
       >
-        <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-white rounded-t-[32px] p-6 pb-10">
-            <View className="flex-row items-center justify-between mb-4">
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
+          <View
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderTopLeftRadius: 32,
+              borderTopRightRadius: 32,
+              padding: 24,
+              paddingBottom: 36,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
               <View>
-                <Text className="text-lg font-black text-[#121214]">
-                  Set Monthly Spend Ceiling
+                <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214" }}>
+                  Set Monthly Ceiling
                 </Text>
-                <Caption>Top-down total limit for {monthLabel}</Caption>
+                <Caption>Top-down total spending budget for {monthLabel}</Caption>
               </View>
               <TouchableOpacity
                 onPress={() => setCeilingModalVisible(false)}
-                className="w-8 h-8 rounded-full bg-[#F7F7F5] items-center justify-center"
+                style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: "#F7F7F5", alignItems: "center", justifyContent: "center" }}
               >
                 <X size={16} color="#121214" />
               </TouchableOpacity>
             </View>
 
-            <Text className="text-xs text-[#71717A] mb-3">
-              Define the overall monthly amount you wish to allocate. You will then divide this ceiling into categories.
-            </Text>
-
-            {/* Quick Ceiling Presets */}
-            <View className="flex-row flex-wrap gap-2 mb-4">
-              {[30000, 50000, 60000, 75000, 100000].map((val) => (
-                <TouchableOpacity
-                  key={val}
-                  onPress={() => setCeilingStr(val.toString())}
-                  style={{
-                    paddingVertical: 7,
-                    paddingHorizontal: 12,
-                    borderRadius: 9999,
-                    backgroundColor: "#F7F7F5",
-                    borderWidth: 1,
-                    borderColor: "#EAEAE5",
-                  }}
-                >
-                  <Text style={{ fontSize: 11, fontWeight: "800", color: "#121214" }}>
-                    ₹{val.toLocaleString("en-IN")}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
             <Input
-              label="Total Monthly Budget Ceiling (₹)"
-              placeholder="e.g. 60000"
+              label="Overall Ceiling Amount (₹)"
+              placeholder="e.g. 50000"
               keyboardType="numeric"
               value={ceilingStr}
               onChangeText={setCeilingStr}
+              helperText="You will divide this master budget into category envelopes"
               containerClassName="mb-6"
             />
 
@@ -1009,124 +840,103 @@ export default function BudgetsScreen() {
                 paddingVertical: 14,
                 borderRadius: 9999,
                 alignItems: "center",
-                justifyContent: "center",
               }}
             >
               <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
-                Confirm Monthly Ceiling
+                Save Ceiling
               </Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* ----------------- MODAL: ALLOCATE CATEGORY SLICE ----------------- */}
+      {/* Add / Edit Category Slice Modal */}
       <Modal
-        visible={categoryModalVisible}
+        visible={sliceModalVisible}
         animationType="slide"
         transparent
-        onRequestClose={() => setCategoryModalVisible(false)}
+        onRequestClose={() => setSliceModalVisible(false)}
       >
-        <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-white rounded-t-[32px] p-6 pb-10">
-            <View className="flex-row items-center justify-between mb-4">
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
+          <View
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderTopLeftRadius: 32,
+              borderTopRightRadius: 32,
+              padding: 24,
+              paddingBottom: 36,
+              maxHeight: "85%",
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <View>
-                <Text className="text-lg font-black text-[#121214]">
-                  Allocate Category Slice
+                <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214" }}>
+                  {editingBudget ? "Edit Category Slice" : "Allocate Category Slice"}
                 </Text>
-                <Caption>
-                  Remaining Buffer: {formatCurrencyFromPaise(Math.max(0, unallocatedBufferPaise))}
-                </Caption>
+                <Caption>Slice of your {formatCurrencyFromPaise(userDefinedCeilingPaise)} ceiling</Caption>
               </View>
               <TouchableOpacity
-                onPress={() => setCategoryModalVisible(false)}
-                className="w-8 h-8 rounded-full bg-[#F7F7F5] items-center justify-center"
+                onPress={() => setSliceModalVisible(false)}
+                style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: "#F7F7F5", alignItems: "center", justifyContent: "center" }}
               >
                 <X size={16} color="#121214" />
               </TouchableOpacity>
             </View>
 
-            {/* Category Selector Chips */}
-            <Text className="text-[11px] font-bold text-[#71717A] uppercase tracking-wider mb-2">
-              Select Category
+            <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A", textTransform: "uppercase", marginBottom: 8 }}>
+              Select Expense Category
             </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row mb-4">
-              {expenseCategories.map((c) => {
-                const isSelected = selectedCatId === c.id;
-                return (
-                  <TouchableOpacity
-                    key={c.id}
-                    onPress={() => setSelectedCatId(c.id)}
-                    style={{
-                      paddingVertical: 8,
-                      paddingHorizontal: 14,
-                      borderRadius: 9999,
-                      marginRight: 8,
-                      backgroundColor: isSelected ? "#FFC83B" : "#F7F7F5",
-                      borderWidth: 1,
-                      borderColor: isSelected ? "#E8BC52" : "#EAEAE5",
-                    }}
-                  >
-                    <Text
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                {expenseCategories.map((c) => {
+                  const isSelected = selectedCatId === c.id;
+                  return (
+                    <TouchableOpacity
+                      key={c.id}
+                      onPress={() => setSelectedCatId(c.id)}
                       style={{
-                        fontSize: 12,
-                        fontWeight: "800",
-                        color: "#121214",
+                        paddingVertical: 8,
+                        paddingHorizontal: 12,
+                        borderRadius: 14,
+                        backgroundColor: isSelected ? "#FFC83B" : "#F7F7F5",
+                        borderWidth: 1,
+                        borderColor: isSelected ? "#E8BC52" : "#EAEAE5",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 6,
                       }}
                     >
-                      {c.name}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+                      {getCategoryIcon(c.icon)}
+                      <Text style={{ fontSize: 12, fontWeight: "800", color: "#121214" }}>
+                        {c.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </ScrollView>
 
-            {/* Quick preset amount chips */}
-            <Text className="text-[11px] font-bold text-[#71717A] uppercase tracking-wider mb-2">
-              Quick Slice Presets
-            </Text>
-            <View className="flex-row gap-2 mb-4">
-              {[2000, 5000, 10000, 15000, 25000].map((val) => (
-                <TouchableOpacity
-                  key={val}
-                  onPress={() => setLimitStr(val.toString())}
-                  style={{
-                    paddingVertical: 6,
-                    paddingHorizontal: 11,
-                    borderRadius: 9999,
-                    backgroundColor: "#F7F7F5",
-                    borderWidth: 1,
-                    borderColor: "#EAEAE5",
-                  }}
-                >
-                  <Text style={{ fontSize: 11, fontWeight: "800", color: "#121214" }}>
-                    ₹{val.toLocaleString("en-IN")}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
             <Input
-              label="Category Allocation (₹)"
-              placeholder="e.g. 10000"
+              label="Allocated Amount (₹)"
+              placeholder="e.g. 15000"
               keyboardType="numeric"
               value={limitStr}
               onChangeText={setLimitStr}
+              helperText={`Unallocated buffer: ${formatCurrencyFromPaise(unallocatedBufferPaise)}`}
               containerClassName="mb-6"
             />
 
             <TouchableOpacity
-              onPress={handleCreateCategoryBudget}
+              onPress={handleSaveCategorySlice}
               style={{
                 backgroundColor: "#121214",
                 paddingVertical: 14,
                 borderRadius: 9999,
                 alignItems: "center",
-                justifyContent: "center",
               }}
             >
               <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
-                Save Category Allocation
+                {editingBudget ? "Update Slice" : "Allocate Slice"}
               </Text>
             </TouchableOpacity>
           </View>
