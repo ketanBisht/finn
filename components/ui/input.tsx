@@ -24,16 +24,16 @@ export function Input({
   return (
     <View className={cn("w-full mb-4", containerClassName)}>
       {label ? (
-        <Text className="text-xs font-bold text-[#121214] dark:text-[#EFEFEA] uppercase tracking-wider mb-1.5 ml-1">
+        <Text className="text-xs font-bold text-[#121214] uppercase tracking-wider mb-1.5 ml-1">
           {label}
         </Text>
       ) : null}
       <View
         className={cn(
-          "flex-row items-center bg-white dark:bg-charcoal-900 border rounded-2xl px-4 py-3.5 shadow-sm",
+          "flex-row items-center bg-white border rounded-2xl px-4 py-3.5 shadow-sm",
           error
             ? "border-rose-500"
-            : "border-[#EAEAE5] dark:border-charcoal-800 focus:border-[#FFC83B]"
+            : "border-[#EAEAE5] focus:border-[#FFC83B]"
         )}
       >
         {leftElement ? <View className="mr-2.5">{leftElement}</View> : null}
@@ -41,7 +41,7 @@ export function Input({
           placeholderTextColor="#8E8E93"
           style={[{ color: "#121214" }, props.style]}
           className={cn(
-            "flex-1 text-base text-[#121214] dark:text-[#F4F4F5] p-0 font-medium",
+            "flex-1 text-base text-[#121214] p-0 font-medium",
             className
           )}
           {...props}
@@ -51,7 +51,7 @@ export function Input({
       {error ? (
         <Text className="text-xs text-rose-500 mt-1 font-medium ml-1">{error}</Text>
       ) : helperText ? (
-        <Text className="text-xs text-slate-500 dark:text-slate-400 mt-1 ml-1">
+        <Text className="text-xs text-slate-500 mt-1 ml-1">
           {helperText}
         </Text>
       ) : null}

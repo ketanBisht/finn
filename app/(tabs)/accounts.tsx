@@ -10,6 +10,7 @@ import {
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { router } from "expo-router";
 import {
   Wallet,
   Plus,
@@ -25,6 +26,7 @@ import {
   RotateCcw,
   Smartphone,
   TrendingUp,
+  HandCoins,
 } from "lucide-react-native";
 import { Input } from "@/components/ui/input";
 import { Caption, FinancialAmount } from "@/components/ui/typography";
@@ -320,6 +322,65 @@ export default function AccountsScreen() {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Debts & Udhar Module Banner */}
+        <TouchableOpacity
+          onPress={() => router.push("/(tabs)/debts")}
+          activeOpacity={0.8}
+          style={{
+            backgroundColor: "#FFFFFF",
+            borderRadius: 22,
+            padding: 14,
+            marginBottom: 16,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            borderWidth: 1,
+            borderColor: "#EAEAE5",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.04,
+            shadowRadius: 2,
+            elevation: 1,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            <View
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 14,
+                backgroundColor: "#FFF4D2",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <HandCoins size={18} color="#B45309" />
+            </View>
+            <View>
+              <Text style={{ fontSize: 13, fontWeight: "800", color: "#121214" }}>
+                Debts & Udhar
+              </Text>
+              <Text style={{ fontSize: 11, color: "#71717A", marginTop: 1 }}>
+                Track money lent to friends or borrowed
+              </Text>
+            </View>
+          </View>
+          <View
+            style={{
+              backgroundColor: "#F7F7F5",
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              borderRadius: 999,
+              borderWidth: 1,
+              borderColor: "#EAEAE5",
+            }}
+          >
+            <Text style={{ fontSize: 11, fontWeight: "800", color: "#121214" }}>
+              Open →
+            </Text>
+          </View>
+        </TouchableOpacity>
 
         {/* Accounts List */}
         <View className="mb-4">

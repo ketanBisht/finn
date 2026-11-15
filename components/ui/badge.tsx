@@ -17,14 +17,14 @@ export function Badge({
   ...props
 }: BadgeProps) {
   const variantStyles = {
-    default: "bg-[#EFEFEA] dark:bg-charcoal-800 text-[#121214] dark:text-[#EFEFEA]",
+    default: "bg-[#EFEFEA] text-[#121214]",
     gold: "bg-[#FFC83B] text-[#121214] font-bold",
-    success: "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300",
-    danger: "bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300",
-    warning: "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300",
-    info: "bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300",
+    success: "bg-emerald-100 text-emerald-800",
+    danger: "bg-rose-100 text-rose-800",
+    warning: "bg-amber-100 text-amber-800",
+    info: "bg-blue-100 text-blue-800",
     dark: "bg-[#121214] text-white font-bold",
-    outline: "border border-[#DCDCD5] dark:border-charcoal-700 text-[#121214] dark:text-[#EFEFEA]",
+    outline: "border border-[#DCDCD5] text-[#121214]",
   }[variant];
 
   const sizeStyles = {

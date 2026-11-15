@@ -17,6 +17,7 @@ import {
   Settings,
   Receipt,
   ChevronRight,
+  HandCoins,
 } from "lucide-react-native";
 import { Caption, FinancialAmount } from "@/components/ui/typography";
 import { useFinanceStore } from "@/store/useFinanceStore";
@@ -31,6 +32,15 @@ export default function DashboardScreen() {
   const transactions = useFinanceStore((s) => s.transactions);
   const budgets = useFinanceStore((s) => s.budgets);
   const overallMonthlyBudgets = useFinanceStore((s) => s.overallMonthlyBudgets);
+  const debts = useFinanceStore((s) => s.debts);
+
+  const pendingDebts = debts.filter((d) => d.status !== "settled");
+  const lentTotal = pendingDebts
+    .filter((d) => d.direction === "given")
+    .reduce((s, d) => s + (d.amount_paise - d.settled_paise), 0);
+  const borrowedTotal = pendingDebts
+    .filter((d) => d.direction === "taken")
+    .reduce((s, d) => s + (d.amount_paise - d.settled_paise), 0);
 
   // 1. Total Net Balance across active accounts
   const totalBalancePaise = accounts.reduce(
@@ -308,6 +318,59 @@ export default function DashboardScreen() {
             </View>
           </TouchableOpacity>
         )}
+
+        {/* Debts Snapshot Card */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => router.push("/(tabs)/debts")}
+          style={{
+            backgroundColor: "#FFFFFF",
+            borderRadius: 24,
+            padding: 16,
+            marginBottom: 16,
+            borderWidth: 1,
+            borderColor: "#EAEAE5",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.04,
+            shadowRadius: 3,
+            elevation: 1,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <HandCoins size={16} color="#B45309" />
+              <Text style={{ fontSize: 12, fontWeight: "900", color: "#121214", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                Debts & Udhar
+              </Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+              <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A" }}>
+                {pendingDebts.length} active
+              </Text>
+              <ChevronRight size={14} color="#71717A" />
+            </View>
+          </View>
+
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <View style={{ flex: 1, backgroundColor: "#E6FBF2", borderRadius: 14, padding: 10 }}>
+              <Text style={{ fontSize: 10, fontWeight: "800", color: "#059669", textTransform: "uppercase" }}>
+                You Lent
+              </Text>
+              <Text style={{ fontSize: 14, fontWeight: "900", color: "#059669", marginTop: 2 }}>
+                {formatCurrencyFromPaise(lentTotal)}
+              </Text>
+            </View>
+            <View style={{ flex: 1, backgroundColor: "#FEECEB", borderRadius: 14, padding: 10 }}>
+              <Text style={{ fontSize: 10, fontWeight: "800", color: "#DC2626", textTransform: "uppercase" }}>
+                You Owe
+              </Text>
+              <Text style={{ fontSize: 14, fontWeight: "900", color: "#DC2626", marginTop: 2 }}>
+                {formatCurrencyFromPaise(borrowedTotal)}
+              </Text>
+            </View>
+          </View>
+        </TouchableOpacity>
 
         {/* 3. Recent Activity (Clean & Uncluttered) */}
         <View className="mb-2">

@@ -29,7 +29,7 @@ export default function LoginScreen() {
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-charcoal-900 rounded-[28px] p-6 mb-6 border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm">
+        <View className="bg-white rounded-[28px] p-6 mb-6 border border-[#EAEAE5] shadow-sm">
           <Input
             label="Email Address"
             placeholder="name@example.com"

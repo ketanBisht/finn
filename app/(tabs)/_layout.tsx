@@ -161,6 +161,12 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="debts"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           href: null, // Accessible via top settings icon

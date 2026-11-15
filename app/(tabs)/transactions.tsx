@@ -18,7 +18,7 @@ import {
   Trash2,
 } from "lucide-react-native";
 import { Input } from "@/components/ui/input";
-import { Heading, Caption, FinancialAmount } from "@/components/ui/typography";
+import { Caption, FinancialAmount } from "@/components/ui/typography";
 import { useFinanceStore } from "@/store/useFinanceStore";
 
 export default function TransactionsScreen() {
@@ -32,27 +32,23 @@ export default function TransactionsScreen() {
   const deleteTransaction = useFinanceStore((s) => s.deleteTransaction);
 
   const filteredTransactions = transactions.filter((t) => {
-    // Search match
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      t.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (t.notes && t.notes.toLowerCase().includes(searchQuery.toLowerCase()));
-
-    // Type filter
+      t.description.toLowerCase().includes(q) ||
+      (t.platform && t.platform.toLowerCase().includes(q)) ||
+      (t.notes && t.notes.toLowerCase().includes(q));
     const matchesType = typeFilter === "all" || t.type === typeFilter;
-
-    // Account filter
     const matchesAccount =
       selectedAccountFilter === "all" ||
       t.account_id === selectedAccountFilter ||
       t.destination_account_id === selectedAccountFilter;
-
     return matchesSearch && matchesType && matchesAccount;
   });
 
   const handleDelete = (id: string, desc: string) => {
     Alert.alert(
       "Delete Transaction",
-      `Are you sure you want to delete "${desc}"? The account balance will be automatically adjusted.`,
+      `Delete "${desc}"? The account balance will be adjusted.`,
       [
         { text: "Cancel", style: "cancel" },
         { text: "Delete", style: "destructive", onPress: () => deleteTransaction(id) },
@@ -62,7 +58,7 @@ export default function TransactionsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F7F7F5" }}>
-      {/* Header with Guaranteed Notch Clearance */}
+      {/* Header */}
       <View
         style={{
           paddingTop: Math.max(insets.top, Platform.OS === "android" ? 44 : 20),
@@ -75,75 +71,105 @@ export default function TransactionsScreen() {
         }}
       >
         <View>
-          <Text className="text-[11px] font-bold text-[#71717A] tracking-wider uppercase">
+          <Text
+            style={{
+              fontSize: 11,
+              fontWeight: "700",
+              color: "#71717A",
+              textTransform: "uppercase",
+              letterSpacing: 1,
+            }}
+          >
             AUDIT & HISTORY
           </Text>
-          <Text className="text-xl font-black text-[#121214]">
+          <Text style={{ fontSize: 20, fontWeight: "900", color: "#121214" }}>
             Transactions
           </Text>
         </View>
 
-        <View className="flex-row items-center gap-2">
-          {/* Black Live Ledger Pill (Inspired by Live Match pill in reference) */}
-          <View className="bg-[#121214] px-3 py-1.5 rounded-full flex-row items-center gap-1.5">
-            <View className="w-2 h-2 rounded-full bg-emerald-400" />
-            <Text className="text-white text-[11px] font-extrabold tracking-wide">
-              Live Ledger
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          {/* Live Ledger pill */}
+          <View
+            style={{
+              backgroundColor: "#121214",
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              borderRadius: 999,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <View
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: 4,
+                backgroundColor: "#34D399",
+              }}
+            />
+            <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "800" }}>
+              Live
             </Text>
           </View>
 
           <TouchableOpacity
             onPress={() => router.push("/transaction/new")}
-            className="w-9 h-9 bg-[#FFC83B] rounded-full items-center justify-center border border-[#E8BC52]"
+            style={{
+              width: 36,
+              height: 36,
+              backgroundColor: "#FFC83B",
+              borderRadius: 18,
+              alignItems: "center",
+              justifyContent: "center",
+              borderWidth: 1,
+              borderColor: "#E8BC52",
+            }}
           >
             <Plus size={18} color="#121214" strokeWidth={2.6} />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Search Input */}
-      <View className="px-5 mt-2">
+      {/* Search Bar */}
+      <View style={{ paddingHorizontal: 20, marginTop: 4 }}>
         <Input
-          placeholder="Search merchant, tag, notes..."
+          placeholder="Search description, merchant, notes..."
           value={searchQuery}
           onChangeText={setSearchQuery}
-          leftElement={<Search size={16} color="#71717A" />}
-          containerClassName="mb-2"
+          leftElement={<Search size={15} color="#A1A1AA" />}
+          containerClassName="mb-3"
         />
       </View>
 
-      {/* Segmented Filter Pills (Inspired by [Match] [Odds] [H2H] [Standing] from reference) */}
-      <View className="px-5 mb-3">
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
-          {[
-            { id: "all", label: "All" },
-            { id: "expense", label: "Expenses" },
-            { id: "income", label: "Income" },
-            { id: "transfer", label: "Transfers" },
-          ].map((tab) => {
-            const isSelected = typeFilter === tab.id;
+      {/* Type Filter Pills */}
+      <View style={{ paddingHorizontal: 20, marginBottom: 10 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {(["all", "expense", "income", "transfer"] as const).map((id) => {
+            const labels = { all: "All", expense: "Expenses", income: "Income", transfer: "Transfers" };
+            const isActive = typeFilter === id;
             return (
               <TouchableOpacity
-                key={tab.id}
-                onPress={() => setTypeFilter(tab.id as any)}
+                key={id}
+                onPress={() => setTypeFilter(id)}
                 style={{
                   paddingVertical: 7,
                   paddingHorizontal: 16,
-                  borderRadius: 9999,
+                  borderRadius: 999,
                   marginRight: 8,
-                  backgroundColor: isSelected ? "#FFC83B" : "#FFFFFF",
+                  backgroundColor: isActive ? "#FFC83B" : "#FFFFFF",
                   borderWidth: 1,
-                  borderColor: isSelected ? "#E8BC52" : "#EAEAE5",
+                  borderColor: isActive ? "#E8BC52" : "#EAEAE5",
                 }}
               >
                 <Text
                   style={{
                     fontSize: 12,
-                    fontWeight: isSelected ? "800" : "600",
-                    color: isSelected ? "#121214" : "#71717A",
+                    fontWeight: isActive ? "800" : "600",
+                    color: isActive ? "#121214" : "#71717A",
                   }}
                 >
-                  {tab.label}
+                  {labels[id]}
                 </Text>
               </TouchableOpacity>
             );
@@ -151,73 +177,84 @@ export default function TransactionsScreen() {
         </ScrollView>
       </View>
 
-      {/* Accounts Horizontal Quick Filters */}
+      {/* Account Quick Filters */}
       {accounts.length > 1 && (
-        <View className="px-5 mb-3">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
-            <TouchableOpacity
-              onPress={() => setSelectedAccountFilter("all")}
-              style={{
-                paddingVertical: 4,
-                paddingHorizontal: 10,
-                borderRadius: 9999,
-                marginRight: 6,
-                backgroundColor: selectedAccountFilter === "all" ? "#121214" : "#EAEAE5",
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: "700",
-                  color: selectedAccountFilter === "all" ? "#FFFFFF" : "#71717A",
-                }}
-              >
-                All Accounts
-              </Text>
-            </TouchableOpacity>
-
-            {accounts.map((acc) => (
-              <TouchableOpacity
-                key={acc.id}
-                onPress={() => setSelectedAccountFilter(acc.id)}
-                style={{
-                  paddingVertical: 4,
-                  paddingHorizontal: 10,
-                  borderRadius: 9999,
-                  marginRight: 6,
-                  backgroundColor: selectedAccountFilter === acc.id ? "#121214" : "#EAEAE5",
-                }}
-              >
-                <Text
+        <View style={{ paddingHorizontal: 20, marginBottom: 8 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {["all", ...accounts.map((a) => a.id)].map((id) => {
+              const isActive = selectedAccountFilter === id;
+              const label = id === "all" ? "All Accounts" : accounts.find((a) => a.id === id)?.name ?? id;
+              return (
+                <TouchableOpacity
+                  key={id}
+                  onPress={() => setSelectedAccountFilter(id)}
                   style={{
-                    fontSize: 11,
-                    fontWeight: "700",
-                    color: selectedAccountFilter === acc.id ? "#FFFFFF" : "#71717A",
+                    paddingVertical: 5,
+                    paddingHorizontal: 12,
+                    borderRadius: 999,
+                    marginRight: 6,
+                    backgroundColor: isActive ? "#121214" : "#EAEAE5",
                   }}
                 >
-                  {acc.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: "700",
+                      color: isActive ? "#FFFFFF" : "#71717A",
+                    }}
+                  >
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
         </View>
       )}
 
-      {/* Transactions List */}
+      {/* Transaction Count */}
+      {filteredTransactions.length > 0 && (
+        <View style={{ paddingHorizontal: 20, marginBottom: 6 }}>
+          <Text style={{ fontSize: 11, color: "#A1A1AA", fontWeight: "600" }}>
+            {filteredTransactions.length} transaction{filteredTransactions.length !== 1 ? "s" : ""}
+          </Text>
+        </View>
+      )}
+
+      {/* Transaction List */}
       <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28 }}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
         {filteredTransactions.length === 0 ? (
-          <View className="bg-white dark:bg-charcoal-900 rounded-[24px] items-center py-12 border border-[#EAEAE5] dark:border-charcoal-800 mt-2">
-            <Search size={32} color="#A1A1AA" />
-            <Text className="text-sm font-bold text-[#121214] dark:text-[#F4F4F5] mt-3">
-              No Transactions Found
+          <View
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderRadius: 24,
+              padding: 48,
+              alignItems: "center",
+              borderWidth: 1,
+              borderColor: "#EAEAE5",
+              marginTop: 4,
+            }}
+          >
+            <Search size={28} color="#D4D4D8" />
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: "700",
+                color: "#71717A",
+                marginTop: 12,
+              }}
+            >
+              {searchQuery ? "No matches found" : "No transactions yet"}
             </Text>
-            <Caption className="text-center mt-1">
-              Try adjusting your search query or filters.
-            </Caption>
+            <Text style={{ fontSize: 12, color: "#A1A1AA", marginTop: 4, textAlign: "center" }}>
+              {searchQuery
+                ? "Try a different keyword or clear the filter"
+                : "Tap + to record your first transaction"}
+            </Text>
           </View>
         ) : (
           filteredTransactions.map((tx) => {
@@ -227,9 +264,20 @@ export default function TransactionsScreen() {
             return (
               <View
                 key={tx.id}
-                className="bg-white dark:bg-charcoal-900 rounded-[22px] p-4 mb-2.5 flex-row items-center justify-between border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm"
+                style={{
+                  backgroundColor: "#FFFFFF",
+                  borderRadius: 20,
+                  padding: 14,
+                  marginBottom: 10,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  borderWidth: 1,
+                  borderColor: "#EAEAE5",
+                }}
               >
-                <View className="flex-row items-center gap-3 flex-1">
+                {/* Left: icon + details */}
+                <View style={{ flexDirection: "row", alignItems: "center", flex: 1, gap: 12 }}>
                   <View
                     style={{
                       width: 42,
@@ -237,11 +285,7 @@ export default function TransactionsScreen() {
                       borderRadius: 16,
                       alignItems: "center",
                       justifyContent: "center",
-                      backgroundColor: isIncome
-                        ? "#E6FBF2"
-                        : isTransfer
-                        ? "#EBF4FF"
-                        : "#FEECEB",
+                      backgroundColor: isIncome ? "#E6FBF2" : isTransfer ? "#EBF4FF" : "#FEECEB",
                     }}
                   >
                     {isIncome ? (
@@ -253,43 +297,81 @@ export default function TransactionsScreen() {
                     )}
                   </View>
 
-                  <View className="flex-1">
-                    <Text className="text-sm font-bold text-[#121214] dark:text-[#F4F4F5]">
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{ fontSize: 13, fontWeight: "700", color: "#121214" }}
+                      numberOfLines={1}
+                    >
                       {tx.description}
                     </Text>
-                    <Text className="text-xs text-[#71717A] mt-0.5">
-                      {tx.account?.name || "Account"} •{" "}
+                    <Text style={{ fontSize: 11, color: "#A1A1AA", marginTop: 2 }}>
+                      {tx.account?.name ?? "Account"} ·{" "}
                       {new Date(tx.transaction_date).toLocaleDateString("en-IN", {
                         day: "numeric",
                         month: "short",
-                        year: "numeric",
                       })}
                     </Text>
 
-                    {/* Platform & UPI Badges */}
+                    {/* Platform & UPI badges */}
                     {(tx.platform || tx.upi_app || tx.payment_mode) && (
-                      <View className="flex-row items-center gap-1.5 mt-1 flex-wrap">
-                        {tx.platform ? (
-                          <View className="bg-[#F7F7F5] px-2 py-0.5 rounded-full border border-[#EAEAE5]">
-                            <Text className="text-[10px] font-extrabold text-[#121214]">
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          gap: 6,
+                          marginTop: 5,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        {tx.platform && (
+                          <View
+                            style={{
+                              backgroundColor: "#F7F7F5",
+                              paddingHorizontal: 8,
+                              paddingVertical: 2,
+                              borderRadius: 999,
+                              borderWidth: 1,
+                              borderColor: "#EAEAE5",
+                            }}
+                          >
+                            <Text style={{ fontSize: 10, fontWeight: "700", color: "#52525B" }}>
                               {tx.platform}
                             </Text>
                           </View>
-                        ) : null}
-
+                        )}
                         {tx.upi_app ? (
-                          <View className="bg-[#FFF4D2] px-2 py-0.5 rounded-full">
-                            <Text className="text-[10px] font-black text-[#B45309]">
+                          <View
+                            style={{
+                              backgroundColor: "#FFF4D2",
+                              paddingHorizontal: 8,
+                              paddingVertical: 2,
+                              borderRadius: 999,
+                            }}
+                          >
+                            <Text style={{ fontSize: 10, fontWeight: "800", color: "#B45309" }}>
                               {tx.upi_app === "gpay"
-                                ? "Google Pay"
+                                ? "GPay"
                                 : tx.upi_app === "phonepe"
                                 ? "PhonePe"
-                                : tx.upi_app.toUpperCase()}
+                                : (tx.upi_app as string).toUpperCase()}
                             </Text>
                           </View>
                         ) : tx.payment_mode ? (
-                          <View className="bg-[#F0EFEA] px-2 py-0.5 rounded-full">
-                            <Text className="text-[10px] font-bold text-[#71717A] capitalize">
+                          <View
+                            style={{
+                              backgroundColor: "#F0EFEA",
+                              paddingHorizontal: 8,
+                              paddingVertical: 2,
+                              borderRadius: 999,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                fontSize: 10,
+                                fontWeight: "600",
+                                color: "#71717A",
+                                textTransform: "capitalize",
+                              }}
+                            >
                               {tx.payment_mode}
                             </Text>
                           </View>
@@ -298,25 +380,36 @@ export default function TransactionsScreen() {
                     )}
 
                     {tx.notes ? (
-                      <Text className="text-[11px] text-[#A1A1AA] italic mt-0.5" numberOfLines={1}>
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          color: "#A1A1AA",
+                          fontStyle: "italic",
+                          marginTop: 3,
+                        }}
+                        numberOfLines={1}
+                      >
                         "{tx.notes}"
                       </Text>
                     ) : null}
                   </View>
                 </View>
 
-                <View className="items-end pl-2">
+                {/* Right: amount + delete */}
+                <View style={{ alignItems: "flex-end", paddingLeft: 8 }}>
                   <FinancialAmount
                     amountPaise={tx.amount_paise}
                     type={isIncome ? "income" : isTransfer ? "neutral" : "expense"}
                     prefix={isIncome ? "+" : isTransfer ? "" : "-"}
-                    className="text-base font-black"
+                    className="text-sm font-black"
                   />
                   <TouchableOpacity
                     onPress={() => handleDelete(tx.id, tx.description)}
-                    className="p-1 mt-1 opacity-40 active:opacity-100"
+                    style={{ padding: 6, marginTop: 2, opacity: 0.35 }}
+                    activeOpacity={1}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
-                    <Trash2 size={14} color="#EF4444" />
+                    <Trash2 size={13} color="#EF4444" />
                   </TouchableOpacity>
                 </View>
               </View>

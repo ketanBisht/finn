@@ -106,5 +106,21 @@ export interface MonthlyBudgetGoal {
   updated_at: string;
 }
 
+export type DebtDirection = "given" | "taken"; // given = you lent money, taken = you borrowed
 
+export type DebtStatus = "pending" | "partially_settled" | "settled";
+
+export interface Debt {
+  id: string;
+  user_id: string;
+  direction: DebtDirection;
+  person_name: string;       // who you lent to / borrowed from
+  amount_paise: number;      // original amount
+  settled_paise: number;     // how much has been settled
+  due_date?: string | null;
+  notes?: string | null;
+  status: DebtStatus;
+  created_at: string;
+  updated_at: string;
+}
 

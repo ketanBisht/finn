@@ -16,6 +16,9 @@ import type {
   TransactionType,
   PaymentMode,
   UPIApp,
+  Debt,
+  DebtDirection,
+  DebtStatus,
 } from "@/types";
 import {
   DEFAULT_EXPENSE_CATEGORIES,
@@ -121,6 +124,20 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase): Promise<void> {
       CREATE TABLE IF NOT EXISTS app_settings (
         key TEXT PRIMARY KEY NOT NULL,
         value TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS debts (
+        id TEXT PRIMARY KEY NOT NULL,
+        user_id TEXT NOT NULL DEFAULT 'local-user',
+        direction TEXT NOT NULL CHECK(direction IN ('given','taken')),
+        person_name TEXT NOT NULL,
+        amount_paise INTEGER NOT NULL,
+        settled_paise INTEGER NOT NULL DEFAULT 0,
+        due_date TEXT,
+        notes TEXT,
+        status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','partially_settled','settled')),
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
 
       CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(transaction_date);
@@ -320,6 +337,7 @@ export interface HydratedState {
   budgets: Budget[];
   overallMonthlyBudgets: Record<string, number>;
   customPlatforms: string[];
+  debts: Debt[];
 }
 
 export async function hydrateAll(db: SQLiteDatabase): Promise<HydratedState> {
@@ -329,6 +347,7 @@ export async function hydrateAll(db: SQLiteDatabase): Promise<HydratedState> {
   const budgets = await getAllBudgets(db, categories);
   const overallMonthlyBudgets = await getOverallMonthlyBudgets(db);
   const customPlatforms = await getCustomPlatforms(db);
+  const debts = await getAllDebts(db);
 
   return {
     categories,
@@ -337,6 +356,7 @@ export async function hydrateAll(db: SQLiteDatabase): Promise<HydratedState> {
     budgets,
     overallMonthlyBudgets,
     customPlatforms,
+    debts,
   };
 }
 
@@ -563,3 +583,91 @@ export async function insertCategory(
   );
 }
 
+
+// ───────────────────────────── READ: Debts ─────────────────────────────
+
+function rowToDebt(row: Record<string, unknown>): Debt {
+  return {
+    id: row.id as string,
+    user_id: row.user_id as string,
+    direction: row.direction as DebtDirection,
+    person_name: row.person_name as string,
+    amount_paise: row.amount_paise as number,
+    settled_paise: row.settled_paise as number,
+    due_date: (row.due_date as string | null) ?? undefined,
+    notes: (row.notes as string | null) ?? undefined,
+    status: row.status as DebtStatus,
+    created_at: row.created_at as string,
+    updated_at: row.updated_at as string,
+  };
+}
+
+export async function getAllDebts(db: SQLiteDatabase): Promise<Debt[]> {
+  const rows = await db.getAllAsync(
+    "SELECT * FROM debts ORDER BY status ASC, created_at DESC;"
+  );
+  return (rows as Record<string, unknown>[]).map(rowToDebt);
+}
+
+// ───────────────────────────── WRITE: Debts ─────────────────────────────
+
+export async function insertDebt(db: SQLiteDatabase, debt: Debt): Promise<void> {
+  await db.runAsync(
+    `INSERT INTO debts (id, user_id, direction, person_name, amount_paise, settled_paise, due_date, notes, status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+    debt.id,
+    debt.user_id,
+    debt.direction,
+    debt.person_name,
+    debt.amount_paise,
+    debt.settled_paise,
+    debt.due_date ?? null,
+    debt.notes ?? null,
+    debt.status,
+    debt.created_at,
+    debt.updated_at
+  );
+}
+
+export async function updateDebtDb(
+  db: SQLiteDatabase,
+  id: string,
+  updates: Partial<Debt>
+): Promise<void> {
+  const sets: string[] = [];
+  const values: (string | number | null)[] = [];
+
+  if (updates.settled_paise !== undefined) {
+    sets.push("settled_paise = ?");
+    values.push(updates.settled_paise);
+  }
+  if (updates.status !== undefined) {
+    sets.push("status = ?");
+    values.push(updates.status);
+  }
+  if (updates.notes !== undefined) {
+    sets.push("notes = ?");
+    values.push(updates.notes ?? null);
+  }
+  if (updates.due_date !== undefined) {
+    sets.push("due_date = ?");
+    values.push(updates.due_date ?? null);
+  }
+  if (updates.person_name !== undefined) {
+    sets.push("person_name = ?");
+    values.push(updates.person_name);
+  }
+  if (sets.length === 0) return;
+  sets.push("updated_at = ?");
+  values.push(new Date().toISOString());
+  values.push(id);
+
+  await db.runAsync(
+    `UPDATE debts SET ${sets.join(", ")} WHERE id = ?;`,
+    ...values
+  );
+}
+
+export async function deleteDebtDb(db: SQLiteDatabase, id: string): Promise<void> {
+  await db.runAsync("DELETE FROM debts WHERE id = ?;", id);
+}

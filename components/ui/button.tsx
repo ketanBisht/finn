@@ -39,8 +39,8 @@ export function Button({
   const variantStyles = {
     primary: "bg-[#121214]",
     gold: "bg-[#FFC83B]",
-    secondary: "bg-[#EFEFEA] dark:bg-charcoal-800",
-    outline: "border border-[#DCDCD5] dark:border-charcoal-700 bg-transparent",
+    secondary: "bg-[#EFEFEA]",
+    outline: "border border-[#DCDCD5] bg-transparent",
     ghost: "bg-transparent",
     danger: "bg-rose-600",
   }[variant];
@@ -48,9 +48,9 @@ export function Button({
   const textVariantStyles = {
     primary: "text-white font-bold",
     gold: "text-[#121214] font-bold",
-    secondary: "text-[#121214] dark:text-white font-semibold",
-    outline: "text-[#121214] dark:text-white font-semibold",
-    ghost: "text-slate-600 dark:text-slate-300 font-medium",
+    secondary: "text-[#121214] font-semibold",
+    outline: "text-[#121214] font-semibold",
+    ghost: "text-slate-600 font-medium",
     danger: "text-white font-bold",
   }[variant];
 

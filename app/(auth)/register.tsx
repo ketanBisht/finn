@@ -22,7 +22,7 @@ export default function RegisterScreen() {
       >
         <View className="mb-8 items-center">
           <WageLogo size={90} style={{ marginBottom: 16 }} />
-          <Text className="text-3xl font-black text-[#121214] dark:text-[#F4F4F5]">
+          <Text className="text-3xl font-black text-[#121214]">
             Create Account
           </Text>
           <Text className="text-sm font-bold text-[#71717A] mt-1 text-center">
@@ -30,7 +30,7 @@ export default function RegisterScreen() {
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-charcoal-900 rounded-[28px] p-6 mb-6 border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm">
+        <View className="bg-white rounded-[28px] p-6 mb-6 border border-[#EAEAE5] shadow-sm">
           <Input
             label="Full Name"
             placeholder="Ketan Bisht"

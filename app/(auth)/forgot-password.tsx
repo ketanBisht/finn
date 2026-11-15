@@ -22,15 +22,15 @@ export default function ForgotPasswordScreen() {
           onPress={() => router.back()}
           className="flex-row items-center gap-2 mb-6"
         >
-          <View className="w-8 h-8 rounded-full bg-white dark:bg-charcoal-900 border border-[#EAEAE5] items-center justify-center">
+          <View className="w-8 h-8 rounded-full bg-white border border-[#EAEAE5] items-center justify-center">
             <ArrowLeft size={16} color="#121214" />
           </View>
-          <Text className="text-sm text-[#121214] dark:text-[#F4F4F5] font-bold">Back</Text>
+          <Text className="text-sm text-[#121214] font-bold">Back</Text>
         </TouchableOpacity>
 
         <View className="mb-8">
           <Caption>PASSWORD RECOVERY</Caption>
-          <Text className="text-3xl font-black text-[#121214] dark:text-[#F4F4F5] mt-1">
+          <Text className="text-3xl font-black text-[#121214] mt-1">
             Reset Password
           </Text>
           <Text className="text-sm font-bold text-[#71717A] mt-2">
@@ -38,13 +38,13 @@ export default function ForgotPasswordScreen() {
           </Text>
         </View>
 
-        <View className="bg-white dark:bg-charcoal-900 rounded-[28px] p-6 mb-6 border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm">
+        <View className="bg-white rounded-[28px] p-6 mb-6 border border-[#EAEAE5] shadow-sm">
           {sent ? (
             <View className="items-center py-4">
               <View className="w-12 h-12 rounded-full bg-[#E6FBF2] items-center justify-center mb-3">
                 <CheckCircle2 size={24} color="#10B981" />
               </View>
-              <Text className="text-base font-black text-[#121214] dark:text-[#F4F4F5] text-center">
+              <Text className="text-base font-black text-[#121214] text-center">
                 Reset Link Sent!
               </Text>
               <Text className="text-xs text-[#71717A] text-center mt-1 mb-4">

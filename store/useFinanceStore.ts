@@ -12,7 +12,7 @@
 
 import { create } from "zustand";
 import type { SQLiteDatabase } from "expo-sqlite";
-import { Account, Category, Transaction, Budget } from "@/types";
+import { Account, Category, Transaction, Budget, Debt, DebtStatus } from "@/types";
 import {
   hydrateAll,
   insertAccount,
@@ -26,6 +26,9 @@ import {
   upsertMonthlyCeiling,
   insertPlatform,
   deletePlatformDb,
+  insertDebt,
+  updateDebtDb,
+  deleteDebtDb,
 } from "@/lib/db";
 
 // ───────────────────────────── Store Interface ─────────────────────────────
@@ -38,6 +41,7 @@ interface FinanceStoreState {
   budgets: Budget[];
   customPlatforms: string[];
   overallMonthlyBudgets: Record<string, number>; // key: `${year}-${month}`, value: limit_amount_paise
+  debts: Debt[];
   isHydrated: boolean;
 
   // Internal: keeps a reference to the db instance for write operations
@@ -68,6 +72,10 @@ interface FinanceStoreState {
     year: number,
     limit_paise: number
   ) => void;
+  // Debts
+  addDebt: (debt: Omit<Debt, "id" | "created_at" | "updated_at">) => void;
+  settleDebt: (id: string, settlePaise: number) => void;
+  deleteDebt: (id: string) => void;
 }
 
 // ───────────────────────────── Store ─────────────────────────────
@@ -79,6 +87,7 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
   budgets: [],
   customPlatforms: [],
   overallMonthlyBudgets: {},
+  debts: [],
   isHydrated: false,
   _db: null,
 
@@ -415,6 +424,63 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
     if (db) {
       upsertMonthlyCeiling(db, month, year, limit_paise).catch((e) =>
         console.error("[DB] Failed to upsert monthly ceiling:", e)
+      );
+    }
+  },
+
+  // ───── Add Debt ─────
+  addDebt: (debtData) => {
+    const state = get();
+    const db = state._db;
+    const now = new Date().toISOString();
+    const newDebt: Debt = {
+      ...debtData,
+      id: `debt-${Date.now()}`,
+      created_at: now,
+      updated_at: now,
+    };
+    set({ debts: [newDebt, ...state.debts] });
+    if (db) {
+      insertDebt(db, newDebt).catch((e) =>
+        console.error("[DB] Failed to insert debt:", e)
+      );
+    }
+  },
+
+  // ───── Settle Debt (partial or full) ─────
+  settleDebt: (id, settlePaise) => {
+    const state = get();
+    const db = state._db;
+    const debt = state.debts.find((d) => d.id === id);
+    if (!debt) return;
+
+    const newSettled = Math.min(debt.amount_paise, debt.settled_paise + settlePaise);
+    const newStatus: DebtStatus =
+      newSettled >= debt.amount_paise ? "settled" : "partially_settled";
+
+    set({
+      debts: state.debts.map((d) =>
+        d.id === id
+          ? { ...d, settled_paise: newSettled, status: newStatus, updated_at: new Date().toISOString() }
+          : d
+      ),
+    });
+
+    if (db) {
+      updateDebtDb(db, id, { settled_paise: newSettled, status: newStatus }).catch((e) =>
+        console.error("[DB] Failed to settle debt:", e)
+      );
+    }
+  },
+
+  // ───── Delete Debt ─────
+  deleteDebt: (id) => {
+    const state = get();
+    const db = state._db;
+    set({ debts: state.debts.filter((d) => d.id !== id) });
+    if (db) {
+      deleteDebtDb(db, id).catch((e) =>
+        console.error("[DB] Failed to delete debt:", e)
       );
     }
   },

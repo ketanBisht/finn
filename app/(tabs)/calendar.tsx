@@ -11,13 +11,12 @@ import { router } from "expo-router";
 import {
   ChevronLeft,
   ChevronRight,
-  Calendar as CalendarIcon,
   Plus,
   ArrowDownLeft,
   ArrowUpRight,
   ArrowLeftRight,
 } from "lucide-react-native";
-import { Heading, Subheading, Caption, FinancialAmount } from "@/components/ui/typography";
+import { Caption, FinancialAmount } from "@/components/ui/typography";
 import { useFinanceStore } from "@/store/useFinanceStore";
 import { formatCurrencyFromPaise, formatLocalDate } from "@/lib/utils";
 
@@ -33,16 +32,13 @@ export default function CalendarScreen() {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
-  // Days in month calculation
   const firstDayOfMonth = new Date(year, month, 1);
   const lastDayOfMonth = new Date(year, month + 1, 0);
   const totalDays = lastDayOfMonth.getDate();
 
-  // Day of week offset for the 1st day (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
   let firstDayIndex = firstDayOfMonth.getDay() - 1;
   if (firstDayIndex === -1) firstDayIndex = 6;
 
-  // Transactions mapped by YYYY-MM-DD using local time
   const transactionsByDate = useMemo(() => {
     const map: Record<
       string,
@@ -55,17 +51,13 @@ export default function CalendarScreen() {
         map[dateKey] = { transactions: [], expensePaise: 0, incomePaise: 0 };
       }
       map[dateKey].transactions.push(tx);
-      if (tx.type === "expense") {
-        map[dateKey].expensePaise += tx.amount_paise;
-      } else if (tx.type === "income") {
-        map[dateKey].incomePaise += tx.amount_paise;
-      }
+      if (tx.type === "expense") map[dateKey].expensePaise += tx.amount_paise;
+      else if (tx.type === "income") map[dateKey].incomePaise += tx.amount_paise;
     });
 
     return map;
   }, [transactions]);
 
-  // Monthly aggregates
   const monthlyStats = useMemo(() => {
     let expenseTotal = 0;
     let incomeTotal = 0;
@@ -85,10 +77,9 @@ export default function CalendarScreen() {
     const dailyAveragePaise =
       daysWithExpenses > 0 ? Math.round(expenseTotal / daysWithExpenses) : 0;
 
-    return { expenseTotal, incomeTotal, dailyAveragePaise, daysWithExpenses };
+    return { expenseTotal, incomeTotal, dailyAveragePaise };
   }, [year, month, totalDays, transactionsByDate]);
 
-  // Selected date key in local time
   const selectedDateKey = formatLocalDate(selectedDate);
   const selectedDayData = transactionsByDate[selectedDateKey] || {
     transactions: [],
@@ -97,15 +88,15 @@ export default function CalendarScreen() {
   };
 
   const handlePrevMonth = () => {
-    const newMonthDate = new Date(year, month - 1, 1);
-    setCurrentDate(newMonthDate);
-    setSelectedDate(newMonthDate);
+    const d = new Date(year, month - 1, 1);
+    setCurrentDate(d);
+    setSelectedDate(d);
   };
 
   const handleNextMonth = () => {
-    const newMonthDate = new Date(year, month + 1, 1);
-    setCurrentDate(newMonthDate);
-    setSelectedDate(newMonthDate);
+    const d = new Date(year, month + 1, 1);
+    setCurrentDate(d);
+    setSelectedDate(d);
   };
 
   const isToday = (dayNum: number) => {
@@ -117,13 +108,10 @@ export default function CalendarScreen() {
     );
   };
 
-  const isSelected = (dayNum: number) => {
-    return (
-      selectedDate.getDate() === dayNum &&
-      selectedDate.getMonth() === month &&
-      selectedDate.getFullYear() === year
-    );
-  };
+  const isSelected = (dayNum: number) =>
+    selectedDate.getDate() === dayNum &&
+    selectedDate.getMonth() === month &&
+    selectedDate.getFullYear() === year;
 
   const monthName = currentDate.toLocaleString("default", {
     month: "long",
@@ -132,7 +120,7 @@ export default function CalendarScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F7F7F5" }}>
-      {/* Top Header - Guaranteed Notch & Status Bar Clearance */}
+      {/* Header */}
       <View
         style={{
           paddingTop: Math.max(insets.top, Platform.OS === "android" ? 44 : 20),
@@ -146,110 +134,178 @@ export default function CalendarScreen() {
       >
         <View>
           <Caption>CALENDAR AUDIT</Caption>
-          <Text className="text-xl font-black text-[#121214]">
+          <Text style={{ fontSize: 20, fontWeight: "900", color: "#121214" }}>
             Daily Activity
           </Text>
         </View>
-
         <TouchableOpacity
           onPress={() => router.push("/transaction/new")}
-          className="w-9 h-9 bg-[#FFC83B] rounded-full items-center justify-center border border-[#E8BC52]"
+          style={{
+            width: 36,
+            height: 36,
+            backgroundColor: "#FFC83B",
+            borderRadius: 18,
+            alignItems: "center",
+            justifyContent: "center",
+            borderWidth: 1,
+            borderColor: "#E8BC52",
+          }}
         >
           <Plus size={18} color="#121214" strokeWidth={2.6} />
         </TouchableOpacity>
       </View>
 
       <ScrollView
-        className="flex-1"
+        style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Month Selector Bar */}
-        <View className="flex-row items-center justify-between bg-white dark:bg-charcoal-900 rounded-[22px] p-3 border border-[#EAEAE5] dark:border-charcoal-800 mb-4 shadow-sm">
+        {/* Month Selector */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            backgroundColor: "#FFFFFF",
+            borderRadius: 22,
+            padding: 10,
+            borderWidth: 1,
+            borderColor: "#EAEAE5",
+            marginBottom: 14,
+          }}
+        >
           <TouchableOpacity
             onPress={handlePrevMonth}
-            className="w-9 h-9 rounded-full bg-[#F7F7F5] dark:bg-charcoal-800 items-center justify-center"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: "#F7F7F5",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
             <ChevronLeft size={18} color="#121214" strokeWidth={2.5} />
           </TouchableOpacity>
 
-          <View className="flex-row items-center gap-2">
-            <CalendarIcon size={16} color="#121214" strokeWidth={2.4} />
-            <Text className="text-base font-black text-[#121214] dark:text-[#F4F4F5]">
-              {monthName}
-            </Text>
-          </View>
+          <Text style={{ fontSize: 15, fontWeight: "900", color: "#121214" }}>
+            {monthName}
+          </Text>
 
           <TouchableOpacity
             onPress={handleNextMonth}
-            className="w-9 h-9 rounded-full bg-[#F7F7F5] dark:bg-charcoal-800 items-center justify-center"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: "#F7F7F5",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
             <ChevronRight size={18} color="#121214" strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
 
         {/* Monthly Summary Cards */}
-        <View className="flex-row gap-2.5 mb-4">
-          <View className="flex-1 bg-white dark:bg-charcoal-900 rounded-[22px] p-3.5 border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm">
-            <Text className="text-[11px] text-[#71717A] font-bold uppercase tracking-wider">
-              Spent
-            </Text>
-            <FinancialAmount
-              amountPaise={monthlyStats.expenseTotal}
-              type="expense"
-              prefix="₹"
-              showDecimals={false}
-              className="text-base font-black mt-1"
-            />
-          </View>
-
-          <View className="flex-1 bg-white dark:bg-charcoal-900 rounded-[22px] p-3.5 border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm">
-            <Text className="text-[11px] text-[#71717A] font-bold uppercase tracking-wider">
-              Earned
-            </Text>
-            <FinancialAmount
-              amountPaise={monthlyStats.incomeTotal}
-              type="income"
-              prefix="₹"
-              showDecimals={false}
-              className="text-base font-black mt-1"
-            />
-          </View>
-
-          <View className="flex-1 bg-white dark:bg-charcoal-900 rounded-[22px] p-3.5 border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm">
-            <Text className="text-[11px] text-[#71717A] font-bold uppercase tracking-wider">
-              Daily Avg
-            </Text>
-            <Text className="text-base font-black text-[#121214] dark:text-[#F4F4F5] mt-1">
-              ₹{Math.round(monthlyStats.dailyAveragePaise / 100).toLocaleString("en-IN")}
-            </Text>
-          </View>
+        <View style={{ flexDirection: "row", gap: 10, marginBottom: 14 }}>
+          {[
+            {
+              label: "SPENT",
+              value: formatCurrencyFromPaise(monthlyStats.expenseTotal),
+              color: "#EF4444",
+            },
+            {
+              label: "EARNED",
+              value: formatCurrencyFromPaise(monthlyStats.incomeTotal),
+              color: "#10B981",
+            },
+            {
+              label: "DAILY AVG",
+              value: formatCurrencyFromPaise(monthlyStats.dailyAveragePaise),
+              color: "#121214",
+            },
+          ].map((item) => (
+            <View
+              key={item.label}
+              style={{
+                flex: 1,
+                backgroundColor: "#FFFFFF",
+                borderRadius: 20,
+                padding: 14,
+                borderWidth: 1,
+                borderColor: "#EAEAE5",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontWeight: "800",
+                  color: "#71717A",
+                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
+                }}
+              >
+                {item.label}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "900",
+                  color: item.color,
+                  marginTop: 4,
+                }}
+              >
+                {item.value}
+              </Text>
+            </View>
+          ))}
         </View>
 
-        {/* Calendar Grid Container */}
-        <View className="bg-white dark:bg-charcoal-900 rounded-[28px] p-4 mb-4 border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm">
-          {/* Day of Week Labels */}
-          <View className="flex-row justify-between mb-2 border-b border-[#F0EFEA] dark:border-charcoal-800 pb-2">
+        {/* Calendar Grid */}
+        <View
+          style={{
+            backgroundColor: "#FFFFFF",
+            borderRadius: 28,
+            padding: 16,
+            marginBottom: 16,
+            borderWidth: 1,
+            borderColor: "#EAEAE5",
+          }}
+        >
+          {/* Day headers */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              marginBottom: 8,
+              paddingBottom: 8,
+              borderBottomWidth: 1,
+              borderBottomColor: "#F0EFEA",
+            }}
+          >
             {DAYS_OF_WEEK.map((d) => (
               <View key={d} style={{ width: "14.28%", alignItems: "center" }}>
-                <Text className="text-xs font-black text-[#71717A] uppercase">
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: "800",
+                    color: "#A1A1AA",
+                    textTransform: "uppercase",
+                  }}
+                >
                   {d}
                 </Text>
               </View>
             ))}
           </View>
 
-          {/* Calendar Day Cells */}
+          {/* Day cells */}
           <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-            {/* Blank leading slots */}
             {Array.from({ length: firstDayIndex }).map((_, i) => (
-              <View
-                key={`blank-${i}`}
-                style={{ width: "14.28%", height: 44 }}
-              />
+              <View key={`blank-${i}`} style={{ width: "14.28%", height: 46 }} />
             ))}
 
-            {/* Days of current month */}
             {Array.from({ length: totalDays }).map((_, i) => {
               const dayNum = i + 1;
               const d = new Date(year, month, dayNum);
@@ -262,8 +318,8 @@ export default function CalendarScreen() {
 
               return (
                 <View
-                  key={`day-wrap-${dayNum}`}
-                  style={{ width: "14.28%", height: 44, padding: 2 }}
+                  key={`day-${dayNum}`}
+                  style={{ width: "14.28%", height: 46, padding: 2 }}
                 >
                   <TouchableOpacity
                     onPress={() => setSelectedDate(d)}
@@ -282,26 +338,21 @@ export default function CalendarScreen() {
                     <Text
                       style={{
                         fontSize: 13,
-                        fontWeight: selected ? "900" : today ? "800" : "600",
-                        color: selected
-                          ? "#121214"
-                          : today
-                          ? "#121214"
-                          : "#475569",
+                        fontWeight: selected ? "900" : today ? "800" : "500",
+                        color: selected ? "#121214" : today ? "#121214" : "#52525B",
                       }}
                     >
                       {dayNum}
                     </Text>
-
-                    {/* Indicator dots */}
-                    <View style={{ flexDirection: "row", gap: 2, marginTop: 2 }}>
+                    {/* Dot indicators */}
+                    <View style={{ flexDirection: "row", gap: 2, marginTop: 1 }}>
                       {hasExpense && (
                         <View
                           style={{
                             width: 4,
                             height: 4,
                             borderRadius: 2,
-                            backgroundColor: selected ? "#121214" : "#EF4444",
+                            backgroundColor: selected ? "#7C3AED" : "#EF4444",
                           }}
                         />
                       )}
@@ -311,7 +362,7 @@ export default function CalendarScreen() {
                             width: 4,
                             height: 4,
                             borderRadius: 2,
-                            backgroundColor: selected ? "#121214" : "#10B981",
+                            backgroundColor: selected ? "#059669" : "#10B981",
                           }}
                         />
                       )}
@@ -323,44 +374,73 @@ export default function CalendarScreen() {
           </View>
         </View>
 
-        {/* Selected Date Details */}
-        <View className="mb-4">
-          <View className="flex-row items-center justify-between mb-3 px-1">
-            <View>
-              <Text className="text-xs font-black text-[#121214] dark:text-[#F4F4F5] uppercase tracking-wider">
-                {selectedDate.toLocaleDateString("en-IN", {
-                  weekday: "short",
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })}
-              </Text>
-            </View>
-
-            <View className="flex-row items-center gap-3">
+        {/* Selected Date Transactions */}
+        <View style={{ marginBottom: 8, paddingHorizontal: 2 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 12,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: "800",
+                color: "#121214",
+                textTransform: "uppercase",
+                letterSpacing: 0.6,
+              }}
+            >
+              {selectedDate.toLocaleDateString("en-IN", {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+            </Text>
+            <View style={{ flexDirection: "row", gap: 10 }}>
               {selectedDayData.expensePaise > 0 && (
-                <Text className="text-xs font-black text-rose-600">
-                  -₹{Math.round(selectedDayData.expensePaise / 100).toLocaleString("en-IN")}
+                <Text style={{ fontSize: 12, fontWeight: "900", color: "#EF4444" }}>
+                  -{formatCurrencyFromPaise(selectedDayData.expensePaise)}
                 </Text>
               )}
               {selectedDayData.incomePaise > 0 && (
-                <Text className="text-xs font-black text-emerald-600">
-                  +₹{Math.round(selectedDayData.incomePaise / 100).toLocaleString("en-IN")}
+                <Text style={{ fontSize: 12, fontWeight: "900", color: "#10B981" }}>
+                  +{formatCurrencyFromPaise(selectedDayData.incomePaise)}
                 </Text>
               )}
             </View>
           </View>
 
           {selectedDayData.transactions.length === 0 ? (
-            <View className="bg-white dark:bg-charcoal-900 rounded-[24px] items-center py-8 border border-[#EAEAE5] dark:border-charcoal-800">
-              <Text className="text-sm font-bold text-[#71717A]">
+            <View
+              style={{
+                backgroundColor: "#FFFFFF",
+                borderRadius: 24,
+                padding: 32,
+                alignItems: "center",
+                borderWidth: 1,
+                borderColor: "#EAEAE5",
+              }}
+            >
+              <Text style={{ fontSize: 13, fontWeight: "600", color: "#A1A1AA" }}>
                 No transactions on this date
               </Text>
               <TouchableOpacity
                 onPress={() => router.push("/transaction/new")}
-                className="mt-3 bg-[#121214] px-4 py-2 rounded-full"
+                style={{
+                  marginTop: 12,
+                  backgroundColor: "#121214",
+                  paddingHorizontal: 16,
+                  paddingVertical: 8,
+                  borderRadius: 999,
+                }}
               >
-                <Text className="text-white text-xs font-bold">+ Record for Today</Text>
+                <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700" }}>
+                  + Record for Today
+                </Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -371,9 +451,19 @@ export default function CalendarScreen() {
               return (
                 <View
                   key={tx.id}
-                  className="bg-white dark:bg-charcoal-900 rounded-[22px] p-3.5 mb-2.5 flex-row items-center justify-between border border-[#EAEAE5] dark:border-charcoal-800 shadow-sm"
+                  style={{
+                    backgroundColor: "#FFFFFF",
+                    borderRadius: 20,
+                    padding: 14,
+                    marginBottom: 10,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    borderWidth: 1,
+                    borderColor: "#EAEAE5",
+                  }}
                 >
-                  <View className="flex-row items-center gap-3">
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                     <View
                       style={{
                         width: 38,
@@ -397,11 +487,14 @@ export default function CalendarScreen() {
                       )}
                     </View>
                     <View>
-                      <Text className="text-sm font-bold text-[#121214] dark:text-[#F4F4F5]">
+                      <Text
+                        style={{ fontSize: 13, fontWeight: "700", color: "#121214" }}
+                      >
                         {tx.description}
                       </Text>
-                      <Text className="text-xs text-[#71717A]">
+                      <Text style={{ fontSize: 11, color: "#71717A", marginTop: 2 }}>
                         {tx.account?.name || "Account"}
+                        {tx.platform ? ` · ${tx.platform}` : ""}
                       </Text>
                     </View>
                   </View>
