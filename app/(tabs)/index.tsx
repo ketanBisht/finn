@@ -21,12 +21,14 @@ import {
 } from "lucide-react-native";
 import { Caption, FinancialAmount } from "@/components/ui/typography";
 import { useFinanceStore } from "@/store/useFinanceStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { formatCurrencyFromPaise } from "@/lib/utils";
 import { WageLogo } from "@/components/ui/wage-logo";
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const [hideBalances, setHideBalances] = useState(false);
+  const profile = useAuthStore((s) => s.profile);
 
   const accounts = useFinanceStore((s) => s.accounts);
   const transactions = useFinanceStore((s) => s.transactions);
@@ -115,7 +117,7 @@ export default function DashboardScreen() {
           <WageLogo size={36} />
           <View>
             <Text className="text-[11px] font-bold text-[#71717A] tracking-wider uppercase">
-              {greeting}, Ketan
+              {greeting}, {profile?.name ? profile.name.split(" ")[0] : "there"}
             </Text>
             <Text className="text-sm font-black text-[#121214]">
               {now.toLocaleDateString("en-IN", {

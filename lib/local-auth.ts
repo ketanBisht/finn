@@ -76,7 +76,7 @@ export async function registerAccount(
   name: string,
   email: string,
   password: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; user?: { name: string; email: string }; error?: string }> {
   const trimmedEmail = email.trim().toLowerCase();
   const trimmedName = name.trim();
 
@@ -102,7 +102,7 @@ export async function registerAccount(
     if (error) {
       return { success: false, error: error.message };
     }
-    return { success: true };
+    return { success: true, user: { name: trimmedName, email: trimmedEmail } };
   }
 
   // Otherwise, use local SecureStore
@@ -115,7 +115,7 @@ export async function registerAccount(
 
   await setStorageItem(LOCAL_USER_KEY, JSON.stringify(user));
   await setStorageItem(LOCAL_SESSION_KEY, JSON.stringify({ email: trimmedEmail, name: trimmedName }));
-  return { success: true };
+  return { success: true, user: { name: trimmedName, email: trimmedEmail } };
 }
 
 export async function loginAccount(
@@ -201,5 +201,25 @@ export async function getActiveLocalSession(): Promise<{ name: string; email: st
     return JSON.parse(raw);
   } catch {
     return null;
+  }
+}
+
+export async function updateStoredProfile(name: string, email: string): Promise<void> {
+  const trimmedName = name.trim();
+  const trimmedEmail = email.trim().toLowerCase();
+
+  await setStorageItem(
+    LOCAL_SESSION_KEY,
+    JSON.stringify({ name: trimmedName, email: trimmedEmail })
+  );
+
+  const rawUser = await getStorageItem(LOCAL_USER_KEY);
+  if (rawUser) {
+    try {
+      const stored = JSON.parse(rawUser);
+      stored.name = trimmedName;
+      stored.email = trimmedEmail;
+      await setStorageItem(LOCAL_USER_KEY, JSON.stringify(stored));
+    } catch {}
   }
 }

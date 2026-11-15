@@ -13,12 +13,14 @@ import { Input } from "@/components/ui/input";
 import { Lock, Mail, User, ArrowRight } from "lucide-react-native";
 import { WageLogo } from "@/components/ui/wage-logo";
 import { registerAccount } from "@/lib/local-auth";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function RegisterScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const setProfile = useAuthStore((s) => s.setProfile);
 
   const handleRegister = async () => {
     if (!name.trim()) {
@@ -41,6 +43,10 @@ export default function RegisterScreen() {
     if (!result.success) {
       Alert.alert("Registration Failed", result.error || "Unable to create account.");
       return;
+    }
+
+    if (result.user) {
+      setProfile(result.user);
     }
 
     Alert.alert("Account Created", "Your Wage account is ready!", [

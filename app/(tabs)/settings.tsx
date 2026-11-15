@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   ScrollView,
@@ -34,25 +34,34 @@ import {
   Lock,
   LogOut,
 } from "lucide-react-native";
-import { logoutAccount } from "@/lib/local-auth";
+import { logoutAccount, updateStoredProfile } from "@/lib/local-auth";
+import { useAuthStore } from "@/store/useAuthStore";
 import { Caption } from "@/components/ui/typography";
 import { Badge } from "@/components/ui/badge";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { useFinanceStore } from "@/store/useFinanceStore";
-import { WageLogo } from "@/components/ui/wage-logo";
-import { WageLoadingScreen } from "@/components/ui/wage-loading-screen";
 import { formatCurrencyFromPaise } from "@/lib/utils";
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
-  const [showLoadingPreview, setShowLoadingPreview] = useState(false);
+  const authProfile = useAuthStore((s) => s.profile);
+  const setAuthProfile = useAuthStore((s) => s.setProfile);
 
-  // Profile Edit State
+  // Profile State synced with signup/login
   const [profileModalVisible, setProfileModalVisible] = useState(false);
-  const [userName, setUserName] = useState("Ketan Bisht");
-  const [userEmail, setUserEmail] = useState("ketan@wage.app");
+  const [userName, setUserName] = useState(authProfile?.name || "User");
+  const [userEmail, setUserEmail] = useState(authProfile?.email || "user@wage.app");
   const [tempName, setTempName] = useState(userName);
   const [tempEmail, setTempEmail] = useState(userEmail);
+
+  useEffect(() => {
+    if (authProfile) {
+      setUserName(authProfile.name);
+      setUserEmail(authProfile.email);
+      setTempName(authProfile.name);
+      setTempEmail(authProfile.email);
+    }
+  }, [authProfile]);
 
   // Preference Toggles
   const [dailyReminders, setDailyReminders] = useState(true);
@@ -74,13 +83,18 @@ export default function SettingsScreen() {
     0
   );
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     if (!tempName.trim()) {
       Alert.alert("Name Required", "Please enter your name.");
       return;
     }
-    setUserName(tempName.trim());
-    setUserEmail(tempEmail.trim());
+    const cleanName = tempName.trim();
+    const cleanEmail = tempEmail.trim() || userEmail;
+
+    setUserName(cleanName);
+    setUserEmail(cleanEmail);
+    setAuthProfile({ name: cleanName, email: cleanEmail });
+    await updateStoredProfile(cleanName, cleanEmail);
     setProfileModalVisible(false);
   };
 
@@ -161,28 +175,12 @@ export default function SettingsScreen() {
             <ArrowLeft size={18} color="#121214" />
           </TouchableOpacity>
           <View>
-            <Caption>PREFERENCES & PROFILE</Caption>
+            <Caption>ACCOUNT & PREFERENCES</Caption>
             <Text style={{ fontSize: 20, fontWeight: "900", color: "#121214" }}>
               Profile & Settings
             </Text>
           </View>
         </View>
-
-        <TouchableOpacity
-          onPress={() => setShowLoadingPreview(true)}
-          style={{
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            borderRadius: 999,
-            backgroundColor: "#FFFFFF",
-            borderWidth: 1,
-            borderColor: "#EAEAE5",
-          }}
-        >
-          <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A" }}>
-            Brand Logo
-          </Text>
-        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -620,29 +618,29 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 5. App Info & Logo */}
+        {/* 5. App Info */}
         <View
           style={{
             backgroundColor: "#FFFFFF",
-            borderRadius: 24,
+            borderRadius: 22,
             padding: 16,
-            marginBottom: 20,
+            marginBottom: 16,
             borderWidth: 1,
             borderColor: "#EAEAE5",
-            alignItems: "center",
           }}
         >
-          <WageLogo size={56} />
-          <Text style={{ fontSize: 14, fontWeight: "900", color: "#121214", marginTop: 8 }}>
-            Wage Intelligence
-          </Text>
-          <Text style={{ fontSize: 11, color: "#71717A", marginTop: 2 }}>
-            Version 1.0.0 · Local-First Architecture
-          </Text>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 10 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <Text style={{ fontSize: 13, fontWeight: "800", color: "#121214" }}>
+              Wage Finance
+            </Text>
+            <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A" }}>
+              v1.0.0
+            </Text>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8 }}>
             <CheckCircle size={13} color="#10B981" />
             <Text style={{ fontSize: 11, color: "#059669", fontWeight: "700" }}>
-              Zero telemetry · 100% On-Device Privacy
+              100% On-Device Storage · Zero Telemetry
             </Text>
           </View>
         </View>
@@ -868,14 +866,6 @@ export default function SettingsScreen() {
           </View>
         </View>
       </Modal>
-
-      {/* Preview Loading Screen Modal */}
-      {showLoadingPreview && (
-        <WageLoadingScreen
-          minDurationMs={2000}
-          onFinish={() => setShowLoadingPreview(false)}
-        />
-      )}
     </View>
   );
 }

@@ -11,6 +11,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useFinanceStore } from "@/store/useFinanceStore";
 import { WageLoadingScreen } from "@/components/ui/wage-loading-screen";
 import { migrateDbIfNeeded } from "@/lib/db";
+import { getActiveLocalSession } from "@/lib/local-auth";
 
 const DB_NAME = "wage.db";
 
@@ -40,10 +41,18 @@ function DbHydrator({ children }: { children: React.ReactNode }) {
  */
 function AppShell() {
   const setSession = useAuthStore((state) => state.setSession);
+  const setProfile = useAuthStore((state) => state.setProfile);
   const setLoading = useAuthStore((state) => state.setLoading);
   const [appReady, setAppReady] = useState(false);
 
   useEffect(() => {
+    // Load local offline session first
+    getActiveLocalSession().then((localUser) => {
+      if (localUser) {
+        setProfile(localUser);
+      }
+    });
+
     // Initialize Supabase session listener
     supabase.auth
       .getSession()
@@ -64,7 +73,7 @@ function AppShell() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [setSession, setLoading]);
+  }, [setSession, setProfile, setLoading]);
 
   return (
     <>

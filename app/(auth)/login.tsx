@@ -13,11 +13,13 @@ import { Input } from "@/components/ui/input";
 import { Lock, Mail, ArrowRight } from "lucide-react-native";
 import { WageLogo } from "@/components/ui/wage-logo";
 import { loginAccount } from "@/lib/local-auth";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const setProfile = useAuthStore((s) => s.setProfile);
 
   const handleLogin = async () => {
     if (!email.trim()) {
@@ -36,6 +38,10 @@ export default function LoginScreen() {
     if (!result.success) {
       Alert.alert("Sign In Failed", result.error || "Unable to sign in.");
       return;
+    }
+
+    if (result.user) {
+      setProfile(result.user);
     }
 
     // Success -> proceed to app
