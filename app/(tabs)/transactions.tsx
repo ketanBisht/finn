@@ -16,6 +16,7 @@ import {
   ArrowLeftRight,
   Plus,
   Trash2,
+  Calendar,
 } from "lucide-react-native";
 import { Input } from "@/components/ui/input";
 import { Caption, FinancialAmount } from "@/components/ui/typography";
@@ -88,30 +89,21 @@ export default function TransactionsScreen() {
         </View>
 
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          {/* Live Ledger pill */}
-          <View
+          <TouchableOpacity
+            onPress={() => router.push("/(tabs)/calendar")}
             style={{
-              backgroundColor: "#121214",
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 999,
-              flexDirection: "row",
+              width: 36,
+              height: 36,
+              backgroundColor: "#FFFFFF",
+              borderRadius: 18,
               alignItems: "center",
-              gap: 6,
+              justifyContent: "center",
+              borderWidth: 1,
+              borderColor: "#EAEAE5",
             }}
           >
-            <View
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: 4,
-                backgroundColor: "#34D399",
-              }}
-            />
-            <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "800" }}>
-              Live
-            </Text>
-          </View>
+            <Calendar size={17} color="#121214" strokeWidth={2.4} />
+          </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => router.push("/transaction/new")}
@@ -224,7 +216,7 @@ export default function TransactionsScreen() {
       {/* Transaction List */}
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       >
         {filteredTransactions.length === 0 ? (

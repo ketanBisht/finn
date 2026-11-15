@@ -142,7 +142,7 @@ export default function DashboardScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => router.push("/(tabs)/settings")}
+            onPress={() => router.push("/settings")}
             className="w-9 h-9 bg-white rounded-full items-center justify-center border border-[#EAEAE5]"
             activeOpacity={0.7}
           >
@@ -153,7 +153,7 @@ export default function DashboardScreen() {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: 32 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       >
         {/* 1. Hero Wealth & Cash Flow Card */}

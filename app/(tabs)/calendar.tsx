@@ -15,6 +15,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   ArrowLeftRight,
+  ArrowLeft,
 } from "lucide-react-native";
 import { Caption, FinancialAmount } from "@/components/ui/typography";
 import { useFinanceStore } from "@/store/useFinanceStore";
@@ -132,11 +133,28 @@ export default function CalendarScreen() {
           justifyContent: "space-between",
         }}
       >
-        <View>
-          <Caption>CALENDAR AUDIT</Caption>
-          <Text style={{ fontSize: 20, fontWeight: "900", color: "#121214" }}>
-            Daily Activity
-          </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <TouchableOpacity
+            onPress={() => router.push("/(tabs)/transactions")}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: "#FFFFFF",
+              borderWidth: 1,
+              borderColor: "#EAEAE5",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <ArrowLeft size={18} color="#121214" />
+          </TouchableOpacity>
+          <View>
+            <Caption>CALENDAR AUDIT</Caption>
+            <Text style={{ fontSize: 20, fontWeight: "900", color: "#121214" }}>
+              Daily Activity
+            </Text>
+          </View>
         </View>
         <TouchableOpacity
           onPress={() => router.push("/transaction/new")}

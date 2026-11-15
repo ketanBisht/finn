@@ -204,7 +204,7 @@ export default function BudgetsScreen() {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Month Selector Bar */}

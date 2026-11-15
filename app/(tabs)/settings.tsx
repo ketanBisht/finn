@@ -32,7 +32,9 @@ import {
   Receipt,
   Bell,
   Lock,
+  LogOut,
 } from "lucide-react-native";
+import { logoutAccount } from "@/lib/local-auth";
 import { Caption } from "@/components/ui/typography";
 import { Badge } from "@/components/ui/badge";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -185,7 +187,7 @@ export default function SettingsScreen() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 40 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
       >
         {/* 1. Profile Hero Card */}
@@ -644,6 +646,41 @@ export default function SettingsScreen() {
             </Text>
           </View>
         </View>
+
+        {/* 6. Sign Out Button */}
+        <TouchableOpacity
+          onPress={() => {
+            Alert.alert("Log Out", "Are you sure you want to sign out?", [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Log Out",
+                style: "destructive",
+                onPress: async () => {
+                  await logoutAccount();
+                  router.replace("/(auth)/login");
+                },
+              },
+            ]);
+          }}
+          activeOpacity={0.8}
+          style={{
+            backgroundColor: "#FFFFFF",
+            borderRadius: 22,
+            padding: 16,
+            marginBottom: 24,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            borderWidth: 1,
+            borderColor: "#FEECEB",
+          }}
+        >
+          <LogOut size={16} color="#EF4444" />
+          <Text style={{ fontSize: 13, fontWeight: "800", color: "#EF4444" }}>
+            Sign Out of Wage
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* Edit Profile Modal */}

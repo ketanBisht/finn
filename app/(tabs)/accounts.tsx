@@ -240,7 +240,7 @@ export default function AccountsScreen() {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Warm Golden Net Worth Card */}

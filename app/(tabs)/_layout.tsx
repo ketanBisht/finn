@@ -2,12 +2,14 @@ import React from "react";
 import { Tabs } from "expo-router";
 import {
   LayoutDashboard,
-  Calendar,
   ArrowLeftRight,
+  HandCoins,
   PieChart,
   Wallet,
+  User,
+  Calendar,
 } from "lucide-react-native";
-import { Platform, View, Text } from "react-native";
+import { Platform, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabsLayout() {
@@ -19,75 +21,59 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarShowLabel: true,
         tabBarStyle: {
+          position: "absolute",
+          bottom: Platform.OS === "ios" ? Math.max(insets.bottom, 14) : 14,
+          left: 12,
+          right: 12,
+          height: 64,
           backgroundColor: "#121214",
-          borderTopColor: "#27272a",
-          borderTopWidth: 1,
-          height: Platform.OS === "ios" ? 82 + insets.bottom : 64 + Math.max(insets.bottom, 6),
-          paddingBottom: Platform.OS === "ios" ? insets.bottom + 2 : Math.max(insets.bottom, 6),
-          paddingTop: 6,
-          elevation: 10,
+          borderRadius: 32,
+          borderWidth: 1,
+          borderColor: "rgba(255, 200, 59, 0.25)",
+          elevation: 16,
           shadowColor: "#000000",
-          shadowOffset: { width: 0, height: -3 },
-          shadowOpacity: 0.2,
-          shadowRadius: 6,
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.4,
+          shadowRadius: 16,
+          paddingBottom: 6,
+          paddingTop: 6,
         },
         tabBarActiveTintColor: "#FFC83B",
         tabBarInactiveTintColor: "#71717A",
         tabBarLabelStyle: {
-          fontSize: 10,
+          fontSize: 9,
           fontWeight: "800",
           marginTop: 2,
         },
       }}
     >
+      {/* 1. Home / Dashboard */}
       <Tabs.Screen
         name="index"
         options={{
-          title: "Dashboard",
+          title: "Home",
           tabBarIcon: ({ focused }) => (
             <View
               style={{
-                width: 36,
-                height: 26,
-                borderRadius: 13,
+                width: 32,
+                height: 24,
+                borderRadius: 12,
                 backgroundColor: focused ? "#FFC83B" : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
               <LayoutDashboard
-                size={17}
+                size={16}
                 color={focused ? "#121214" : "#71717A"}
-                strokeWidth={focused ? 2.5 : 2}
+                strokeWidth={focused ? 2.6 : 2}
               />
             </View>
           ),
         }}
       />
-      <Tabs.Screen
-        name="calendar"
-        options={{
-          title: "Calendar",
-          tabBarIcon: ({ focused }) => (
-            <View
-              style={{
-                width: 36,
-                height: 26,
-                borderRadius: 13,
-                backgroundColor: focused ? "#FFC83B" : "transparent",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Calendar
-                size={17}
-                color={focused ? "#121214" : "#71717A"}
-                strokeWidth={focused ? 2.5 : 2}
-              />
-            </View>
-          ),
-        }}
-      />
+
+      {/* 2. Ledger */}
       <Tabs.Screen
         name="transactions"
         options={{
@@ -95,23 +81,51 @@ export default function TabsLayout() {
           tabBarIcon: ({ focused }) => (
             <View
               style={{
-                width: 36,
-                height: 26,
-                borderRadius: 13,
+                width: 32,
+                height: 24,
+                borderRadius: 12,
                 backgroundColor: focused ? "#FFC83B" : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
               <ArrowLeftRight
-                size={17}
+                size={16}
                 color={focused ? "#121214" : "#71717A"}
-                strokeWidth={focused ? 2.5 : 2}
+                strokeWidth={focused ? 2.6 : 2}
               />
             </View>
           ),
         }}
       />
+
+      {/* 3. Debts & Udhar (Explicit user request for dedicated nav bar section) */}
+      <Tabs.Screen
+        name="debts"
+        options={{
+          title: "Debts",
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                width: 32,
+                height: 24,
+                borderRadius: 12,
+                backgroundColor: focused ? "#FFC83B" : "transparent",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <HandCoins
+                size={16}
+                color={focused ? "#121214" : "#71717A"}
+                strokeWidth={focused ? 2.6 : 2}
+              />
+            </View>
+          ),
+        }}
+      />
+
+      {/* 4. Budgets */}
       <Tabs.Screen
         name="budgets"
         options={{
@@ -119,23 +133,25 @@ export default function TabsLayout() {
           tabBarIcon: ({ focused }) => (
             <View
               style={{
-                width: 36,
-                height: 26,
-                borderRadius: 13,
+                width: 32,
+                height: 24,
+                borderRadius: 12,
                 backgroundColor: focused ? "#FFC83B" : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
               <PieChart
-                size={17}
+                size={16}
                 color={focused ? "#121214" : "#71717A"}
-                strokeWidth={focused ? 2.5 : 2}
+                strokeWidth={focused ? 2.6 : 2}
               />
             </View>
           ),
         }}
       />
+
+      {/* 5. Accounts & Wallets */}
       <Tabs.Screen
         name="accounts"
         options={{
@@ -143,33 +159,55 @@ export default function TabsLayout() {
           tabBarIcon: ({ focused }) => (
             <View
               style={{
-                width: 36,
-                height: 26,
-                borderRadius: 13,
+                width: 32,
+                height: 24,
+                borderRadius: 12,
                 backgroundColor: focused ? "#FFC83B" : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
               <Wallet
-                size={17}
+                size={16}
                 color={focused ? "#121214" : "#71717A"}
-                strokeWidth={focused ? 2.5 : 2}
+                strokeWidth={focused ? 2.6 : 2}
               />
             </View>
           ),
         }}
       />
-      <Tabs.Screen
-        name="debts"
-        options={{
-          href: null,
-        }}
-      />
+
+      {/* 6. Settings & Profile (Explicit user request for visible tab) */}
       <Tabs.Screen
         name="settings"
         options={{
-          href: null, // Accessible via top settings icon
+          title: "Profile",
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                width: 32,
+                height: 24,
+                borderRadius: 12,
+                backgroundColor: focused ? "#FFC83B" : "transparent",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <User
+                size={16}
+                color={focused ? "#121214" : "#71717A"}
+                strokeWidth={focused ? 2.6 : 2}
+              />
+            </View>
+          ),
+        }}
+      />
+
+      {/* Calendar Audit (accessible via Ledger & Dashboard) */}
+      <Tabs.Screen
+        name="calendar"
+        options={{
+          href: null,
         }}
       />
     </Tabs>
