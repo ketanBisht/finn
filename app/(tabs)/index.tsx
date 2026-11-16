@@ -186,7 +186,6 @@ export default function DashboardScreen() {
             <FinancialAmount
               amountPaise={totalBalancePaise}
               type="neutral"
-              prefix="₹"
               className="text-[#121214] text-3xl font-black mb-4"
             />
           )}

@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
   Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -43,12 +44,16 @@ export default function DebtsScreen() {
   const [amountStr, setAmountStr] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
+  const [selectedAccountId, setSelectedAccountId] = useState<string>("");
+  const [settleAccountId, setSettleAccountId] = useState<string>("");
 
   const debts = useFinanceStore((s) => s.debts);
+  const accounts = useFinanceStore((s) => s.accounts);
   const addDebt = useFinanceStore((s) => s.addDebt);
   const updateDebt = useFinanceStore((s) => s.updateDebt);
   const settleDebt = useFinanceStore((s) => s.settleDebt);
   const deleteDebt = useFinanceStore((s) => s.deleteDebt);
+  const addTransaction = useFinanceStore((s) => s.addTransaction);
 
   const filtered = debts.filter((d) => {
     if (tab === "all") return true;
@@ -70,6 +75,7 @@ export default function DebtsScreen() {
     setDueDate("");
     setNotes("");
     setDirection("given");
+    setSelectedAccountId(accounts[0]?.id || "");
   };
 
   const openAdd = () => {
@@ -84,6 +90,7 @@ export default function DebtsScreen() {
     setDirection(debt.direction);
     setDueDate(debt.due_date ?? "");
     setNotes(debt.notes ?? "");
+    setSelectedAccountId(debt.account_id ?? accounts[0]?.id ?? "");
     setAddModalVisible(true);
   };
 
@@ -104,6 +111,7 @@ export default function DebtsScreen() {
         direction,
         due_date: dueDate.trim() || undefined,
         notes: notes.trim() || undefined,
+        account_id: selectedAccountId || undefined,
       });
     } else {
       addDebt({
@@ -114,8 +122,29 @@ export default function DebtsScreen() {
         settled_paise: 0,
         due_date: dueDate.trim() || undefined,
         notes: notes.trim() || undefined,
+        account_id: selectedAccountId || undefined,
         status: "pending",
       });
+
+      // Automatically create corresponding transaction if an account was chosen
+      if (selectedAccountId) {
+        const isLending = direction === "given";
+        addTransaction({
+          user_id: "local-user",
+          account_id: selectedAccountId,
+          category_id: null,
+          destination_account_id: null,
+          amount_paise: paise,
+          type: isLending ? "expense" : "income",
+          description: isLending
+            ? `Loan to ${personName.trim()}`
+            : `Borrowed from ${personName.trim()}`,
+          notes: notes.trim() || undefined,
+          platform: "Debts",
+          payment_mode: "other",
+          transaction_date: new Date().toISOString(),
+        });
+      }
     }
     resetForm();
     setAddModalVisible(false);
@@ -127,7 +156,33 @@ export default function DebtsScreen() {
       Alert.alert("Required", "Enter an amount to settle.");
       return;
     }
+    const targetDebt = debts.find((d) => d.id === id);
+    if (!targetDebt) return;
+
     settleDebt(id, paise);
+
+    // If an account was chosen for settlement, record the transaction!
+    if (settleAccountId) {
+      const isLendingResolved = targetDebt.direction === "given";
+      // If you lent money, resolving it means you RECEIVE money back (income)!
+      // If you borrowed money, resolving it means you PAY money back (expense)!
+      addTransaction({
+        user_id: "local-user",
+        account_id: settleAccountId,
+        category_id: null,
+        destination_account_id: null,
+        amount_paise: paise,
+        type: isLendingResolved ? "income" : "expense",
+        description: isLendingResolved
+          ? `Loan repayment from ${targetDebt.person_name}`
+          : `Loan repayment to ${targetDebt.person_name}`,
+        notes: `Debt settlement record`,
+        platform: "Debts",
+        payment_mode: "other",
+        transaction_date: new Date().toISOString(),
+      });
+    }
+
     setSettleAmountStr("");
     setSettleModalVisible(null);
   };
@@ -444,7 +499,11 @@ export default function DebtsScreen() {
                 {!isSettled && (
                   <View style={{ flexDirection: "row", gap: 8 }}>
                     <TouchableOpacity
-                      onPress={() => { setSettleAmountStr(""); setSettleModalVisible(debt.id); }}
+                      onPress={() => {
+                        setSettleAmountStr("");
+                        setSettleAccountId(debt.account_id || (accounts[0]?.id ?? ""));
+                        setSettleModalVisible(debt.id);
+                      }}
                       style={{
                         flex: 1,
                         backgroundColor: "#121214",
@@ -527,17 +586,21 @@ export default function DebtsScreen() {
         transparent
         onRequestClose={() => setAddModalVisible(false)}
       >
-        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}
+        >
           <View
             style={{
               backgroundColor: "#FFFFFF",
               borderTopLeftRadius: 32,
               borderTopRightRadius: 32,
               padding: 24,
-              paddingBottom: 36,
+              paddingBottom: Platform.OS === "ios" ? 40 : 24,
+              maxHeight: "88%",
             }}
           >
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
               <View>
                 <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214" }}>
                   {editingDebt ? "Edit Debt Record" : "Record a Debt"}
@@ -552,96 +615,150 @@ export default function DebtsScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Direction toggle */}
-            <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A", textTransform: "uppercase", marginBottom: 8 }}>
-              Type
-            </Text>
-            <View style={{ flexDirection: "row", gap: 10, marginBottom: 16 }}>
-              {([
-                { id: "given", label: "I Lent Money", icon: <ArrowUpRight size={14} color={direction === "given" ? "#059669" : "#71717A"} /> },
-                { id: "taken", label: "I Borrowed", icon: <ArrowDownLeft size={14} color={direction === "taken" ? "#DC2626" : "#71717A"} /> },
-              ] as const).map((opt) => {
-                const isActive = direction === opt.id;
-                return (
-                  <TouchableOpacity
-                    key={opt.id}
-                    onPress={() => setDirection(opt.id)}
-                    style={{
-                      flex: 1,
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 6,
-                      paddingVertical: 12,
-                      borderRadius: 16,
-                      backgroundColor: isActive
-                        ? opt.id === "given" ? "#E6FBF2" : "#FEECEB"
-                        : "#F7F7F5",
-                      borderWidth: 1.5,
-                      borderColor: isActive
-                        ? opt.id === "given" ? "#10B981" : "#EF4444"
-                        : "#EAEAE5",
-                    }}
-                  >
-                    {opt.icon}
-                    <Text
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              automaticallyAdjustKeyboardInsets={true}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 20 }}
+            >
+              {/* Direction toggle */}
+              <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A", textTransform: "uppercase", marginBottom: 8 }}>
+                Type
+              </Text>
+              <View style={{ flexDirection: "row", gap: 10, marginBottom: 16 }}>
+                {([
+                  { id: "given", label: "I Lent Money", icon: <ArrowUpRight size={14} color={direction === "given" ? "#059669" : "#71717A"} /> },
+                  { id: "taken", label: "I Borrowed", icon: <ArrowDownLeft size={14} color={direction === "taken" ? "#DC2626" : "#71717A"} /> },
+                ] as const).map((opt) => {
+                  const isActive = direction === opt.id;
+                  return (
+                    <TouchableOpacity
+                      key={opt.id}
+                      onPress={() => setDirection(opt.id)}
                       style={{
-                        fontSize: 12,
-                        fontWeight: "800",
-                        color: isActive
-                          ? opt.id === "given" ? "#059669" : "#DC2626"
-                          : "#71717A",
+                        flex: 1,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 6,
+                        paddingVertical: 12,
+                        borderRadius: 16,
+                        backgroundColor: isActive
+                          ? opt.id === "given" ? "#E6FBF2" : "#FEECEB"
+                          : "#F7F7F5",
+                        borderWidth: 1.5,
+                        borderColor: isActive
+                          ? opt.id === "given" ? "#10B981" : "#EF4444"
+                          : "#EAEAE5",
                       }}
                     >
-                      {opt.label}
+                      {opt.icon}
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: "800",
+                          color: isActive
+                            ? opt.id === "given" ? "#059669" : "#DC2626"
+                            : "#71717A",
+                        }}
+                      >
+                        {opt.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Linked Account Selector (creates ledger transaction) */}
+              <View style={{ marginBottom: 16 }}>
+                <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A", textTransform: "uppercase", marginBottom: 8 }}>
+                  {direction === "given" ? "Deduct From Account (Expense)" : "Credit To Account (Income)"}
+                </Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <TouchableOpacity
+                    onPress={() => setSelectedAccountId("")}
+                    style={{
+                      paddingVertical: 7,
+                      paddingHorizontal: 14,
+                      borderRadius: 999,
+                      marginRight: 8,
+                      backgroundColor: !selectedAccountId ? "#121214" : "#F7F7F5",
+                      borderWidth: 1,
+                      borderColor: !selectedAccountId ? "#121214" : "#EAEAE5",
+                    }}
+                  >
+                    <Text style={{ fontSize: 12, fontWeight: "700", color: !selectedAccountId ? "#FFFFFF" : "#71717A" }}>
+                      Don't record transaction
                     </Text>
                   </TouchableOpacity>
-                );
-              })}
-            </View>
+                  {accounts.map((acc) => {
+                    const isSelected = selectedAccountId === acc.id;
+                    return (
+                      <TouchableOpacity
+                        key={acc.id}
+                        onPress={() => setSelectedAccountId(acc.id)}
+                        style={{
+                          paddingVertical: 7,
+                          paddingHorizontal: 14,
+                          borderRadius: 999,
+                          marginRight: 8,
+                          backgroundColor: isSelected ? "#FFC83B" : "#F7F7F5",
+                          borderWidth: 1,
+                          borderColor: isSelected ? "#E8BC52" : "#EAEAE5",
+                        }}
+                      >
+                        <Text style={{ fontSize: 12, fontWeight: "700", color: isSelected ? "#121214" : "#71717A" }}>
+                          {acc.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
 
-            <Input
-              label="Person's Name"
-              placeholder="e.g. Rahul, Sister, Office friend"
-              value={personName}
-              onChangeText={setPersonName}
-            />
-            <Input
-              label="Amount (₹)"
-              placeholder="0"
-              keyboardType="numeric"
-              value={amountStr}
-              onChangeText={setAmountStr}
-            />
-            <Input
-              label="Due Date (optional)"
-              placeholder="e.g. Dec 2026"
-              value={dueDate}
-              onChangeText={setDueDate}
-            />
-            <Input
-              label="Notes (optional)"
-              placeholder="e.g. For trip expenses"
-              value={notes}
-              onChangeText={setNotes}
-              containerClassName="mb-6"
-            />
+              <Input
+                label="Person's Name"
+                placeholder="e.g. Rahul, Sister, Office friend"
+                value={personName}
+                onChangeText={setPersonName}
+              />
+              <Input
+                label="Amount (₹)"
+                placeholder="0"
+                keyboardType="numeric"
+                value={amountStr}
+                onChangeText={setAmountStr}
+              />
+              <Input
+                label="Due Date (optional)"
+                placeholder="e.g. Dec 2026"
+                value={dueDate}
+                onChangeText={setDueDate}
+              />
+              <Input
+                label="Notes (optional)"
+                placeholder="e.g. For trip expenses"
+                value={notes}
+                onChangeText={setNotes}
+                containerClassName="mb-6"
+              />
 
-            <TouchableOpacity
-              onPress={handleAdd}
-              style={{
-                backgroundColor: "#121214",
-                paddingVertical: 14,
-                borderRadius: 999,
-                alignItems: "center",
-              }}
-            >
-              <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
-                {editingDebt ? "Update Record" : "Save Debt"}
-              </Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleAdd}
+                style={{
+                  backgroundColor: "#121214",
+                  paddingVertical: 14,
+                  borderRadius: 999,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
+                  {editingDebt ? "Update Record" : "Save Debt"}
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Settle Modal */}
@@ -651,20 +768,27 @@ export default function DebtsScreen() {
         transparent
         onRequestClose={() => setSettleModalVisible(null)}
       >
-        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}
+        >
           <View
             style={{
               backgroundColor: "#FFFFFF",
               borderTopLeftRadius: 32,
               borderTopRightRadius: 32,
               padding: 24,
-              paddingBottom: 36,
+              paddingBottom: Platform.OS === "ios" ? 40 : 24,
+              maxHeight: "80%",
             }}
           >
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214" }}>
-                Settle Amount
-              </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <View>
+                <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214" }}>
+                  Settle Debt
+                </Text>
+                <Caption>Resolve & record repayment</Caption>
+              </View>
               <TouchableOpacity
                 onPress={() => setSettleModalVisible(null)}
                 style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: "#F7F7F5", alignItems: "center", justifyContent: "center" }}
@@ -673,43 +797,100 @@ export default function DebtsScreen() {
               </TouchableOpacity>
             </View>
 
-            {settleModalVisible && (() => {
-              const debt = debts.find((d) => d.id === settleModalVisible);
-              if (!debt) return null;
-              return (
-                <View style={{ marginBottom: 16, padding: 14, backgroundColor: "#F7F7F5", borderRadius: 16 }}>
-                  <Text style={{ fontSize: 12, color: "#71717A" }}>Outstanding</Text>
-                  <Text style={{ fontSize: 20, fontWeight: "900", color: "#121214", marginTop: 2 }}>
-                    {formatCurrencyFromPaise(debt.amount_paise - debt.settled_paise)}
-                  </Text>
-                </View>
-              );
-            })()}
-
-            <Input
-              label="Amount Settled (₹)"
-              placeholder="0"
-              keyboardType="numeric"
-              value={settleAmountStr}
-              onChangeText={setSettleAmountStr}
-              containerClassName="mb-6"
-            />
-
-            <TouchableOpacity
-              onPress={() => settleModalVisible && handleSettle(settleModalVisible)}
-              style={{
-                backgroundColor: "#121214",
-                paddingVertical: 14,
-                borderRadius: 999,
-                alignItems: "center",
-              }}
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              automaticallyAdjustKeyboardInsets={true}
+              showsVerticalScrollIndicator={false}
             >
-              <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
-                Confirm Settlement
-              </Text>
-            </TouchableOpacity>
+              {settleModalVisible && (() => {
+                const debt = debts.find((d) => d.id === settleModalVisible);
+                if (!debt) return null;
+                const outstanding = debt.amount_paise - debt.settled_paise;
+                const isLending = debt.direction === "given";
+                return (
+                  <View style={{ marginBottom: 16, padding: 14, backgroundColor: "#F7F7F5", borderRadius: 16, borderWidth: 1, borderColor: "#EAEAE5" }}>
+                    <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A", textTransform: "uppercase" }}>
+                      {isLending ? "Money Lent To" : "Money Borrowed From"} {debt.person_name}
+                    </Text>
+                    <Text style={{ fontSize: 20, fontWeight: "900", color: "#121214", marginTop: 4 }}>
+                      {formatCurrencyFromPaise(outstanding)} remaining
+                    </Text>
+                  </View>
+                );
+              })()}
+
+              <Input
+                label="Amount Settled (₹)"
+                placeholder="0"
+                keyboardType="numeric"
+                value={settleAmountStr}
+                onChangeText={setSettleAmountStr}
+              />
+
+              {/* Settlement Account Selector */}
+              <View style={{ marginBottom: 20 }}>
+                <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A", textTransform: "uppercase", marginBottom: 8 }}>
+                  Settlement Account (Record Transaction)
+                </Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <TouchableOpacity
+                    onPress={() => setSettleAccountId("")}
+                    style={{
+                      paddingVertical: 7,
+                      paddingHorizontal: 14,
+                      borderRadius: 999,
+                      marginRight: 8,
+                      backgroundColor: !settleAccountId ? "#121214" : "#F7F7F5",
+                      borderWidth: 1,
+                      borderColor: !settleAccountId ? "#121214" : "#EAEAE5",
+                    }}
+                  >
+                    <Text style={{ fontSize: 12, fontWeight: "700", color: !settleAccountId ? "#FFFFFF" : "#71717A" }}>
+                      Don't record transaction
+                    </Text>
+                  </TouchableOpacity>
+                  {accounts.map((acc) => {
+                    const isSelected = settleAccountId === acc.id;
+                    return (
+                      <TouchableOpacity
+                        key={acc.id}
+                        onPress={() => setSettleAccountId(acc.id)}
+                        style={{
+                          paddingVertical: 7,
+                          paddingHorizontal: 14,
+                          borderRadius: 999,
+                          marginRight: 8,
+                          backgroundColor: isSelected ? "#FFC83B" : "#F7F7F5",
+                          borderWidth: 1,
+                          borderColor: isSelected ? "#E8BC52" : "#EAEAE5",
+                        }}
+                      >
+                        <Text style={{ fontSize: 12, fontWeight: "700", color: isSelected ? "#121214" : "#71717A" }}>
+                          {acc.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+
+              <TouchableOpacity
+                onPress={() => settleModalVisible && handleSettle(settleModalVisible)}
+                style={{
+                  backgroundColor: "#121214",
+                  paddingVertical: 14,
+                  borderRadius: 999,
+                  alignItems: "center",
+                  marginBottom: 10,
+                }}
+              >
+                <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
+                  Confirm Settlement
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

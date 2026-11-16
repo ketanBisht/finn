@@ -7,6 +7,7 @@ import {
   Modal,
   Alert,
   Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -798,56 +799,69 @@ export default function BudgetsScreen() {
         transparent
         onRequestClose={() => setCeilingModalVisible(false)}
       >
-        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
-          <View
-            style={{
-              backgroundColor: "#FFFFFF",
-              borderTopLeftRadius: 32,
-              borderTopRightRadius: 32,
-              padding: 24,
-              paddingBottom: 36,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-              <View>
-                <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214" }}>
-                  Set Monthly Ceiling
-                </Text>
-                <Caption>Top-down total spending budget for {monthLabel}</Caption>
-              </View>
-              <TouchableOpacity
-                onPress={() => setCeilingModalVisible(false)}
-                style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: "#F7F7F5", alignItems: "center", justifyContent: "center" }}
-              >
-                <X size={16} color="#121214" />
-              </TouchableOpacity>
-            </View>
-
-            <Input
-              label="Overall Ceiling Amount (₹)"
-              placeholder="e.g. 50000"
-              keyboardType="numeric"
-              value={ceilingStr}
-              onChangeText={setCeilingStr}
-              helperText="You will divide this master budget into category envelopes"
-              containerClassName="mb-6"
-            />
-
-            <TouchableOpacity
-              onPress={handleSaveCeiling}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
+        >
+          <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
+            <View
               style={{
-                backgroundColor: "#121214",
-                paddingVertical: 14,
-                borderRadius: 9999,
-                alignItems: "center",
+                backgroundColor: "#FFFFFF",
+                borderTopLeftRadius: 32,
+                borderTopRightRadius: 32,
+                padding: 24,
+                paddingBottom: 36,
+                maxHeight: "90%",
               }}
             >
-              <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
-                Save Ceiling
-              </Text>
-            </TouchableOpacity>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+                <View>
+                  <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214" }}>
+                    Set Monthly Ceiling
+                  </Text>
+                  <Caption>Top-down total spending budget for {monthLabel}</Caption>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setCeilingModalVisible(false)}
+                  style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: "#F7F7F5", alignItems: "center", justifyContent: "center" }}
+                >
+                  <X size={16} color="#121214" />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                automaticallyAdjustKeyboardInsets={true}
+              >
+                <Input
+                  label="Overall Ceiling Amount (₹)"
+                  placeholder="e.g. 50000"
+                  keyboardType="numeric"
+                  value={ceilingStr}
+                  onChangeText={setCeilingStr}
+                  helperText="You will divide this master budget into category envelopes"
+                  containerClassName="mb-6"
+                />
+
+                <TouchableOpacity
+                  onPress={handleSaveCeiling}
+                  style={{
+                    backgroundColor: "#121214",
+                    paddingVertical: 14,
+                    borderRadius: 9999,
+                    alignItems: "center",
+                    marginBottom: 8,
+                  }}
+                >
+                  <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
+                    Save Ceiling
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Add / Edit Category Slice Modal */}
@@ -857,90 +871,102 @@ export default function BudgetsScreen() {
         transparent
         onRequestClose={() => setSliceModalVisible(false)}
       >
-        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
-          <View
-            style={{
-              backgroundColor: "#FFFFFF",
-              borderTopLeftRadius: 32,
-              borderTopRightRadius: 32,
-              padding: 24,
-              paddingBottom: 36,
-              maxHeight: "85%",
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <View>
-                <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214" }}>
-                  {editingBudget ? "Edit Category Slice" : "Allocate Category Slice"}
-                </Text>
-                <Caption>Slice of your {formatCurrencyFromPaise(userDefinedCeilingPaise)} ceiling</Caption>
-              </View>
-              <TouchableOpacity
-                onPress={() => setSliceModalVisible(false)}
-                style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: "#F7F7F5", alignItems: "center", justifyContent: "center" }}
-              >
-                <X size={16} color="#121214" />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A", textTransform: "uppercase", marginBottom: 8 }}>
-              Select Expense Category
-            </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                {expenseCategories.map((c) => {
-                  const isSelected = selectedCatId === c.id;
-                  return (
-                    <TouchableOpacity
-                      key={c.id}
-                      onPress={() => setSelectedCatId(c.id)}
-                      style={{
-                        paddingVertical: 8,
-                        paddingHorizontal: 12,
-                        borderRadius: 14,
-                        backgroundColor: isSelected ? "#FFC83B" : "#F7F7F5",
-                        borderWidth: 1,
-                        borderColor: isSelected ? "#E8BC52" : "#EAEAE5",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                    >
-                      {getCategoryIcon(c.icon)}
-                      <Text style={{ fontSize: 12, fontWeight: "800", color: "#121214" }}>
-                        {c.name}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </ScrollView>
-
-            <Input
-              label="Allocated Amount (₹)"
-              placeholder="e.g. 15000"
-              keyboardType="numeric"
-              value={limitStr}
-              onChangeText={setLimitStr}
-              helperText={`Unallocated buffer: ${formatCurrencyFromPaise(unallocatedBufferPaise)}`}
-              containerClassName="mb-6"
-            />
-
-            <TouchableOpacity
-              onPress={handleSaveCategorySlice}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
+        >
+          <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
+            <View
               style={{
-                backgroundColor: "#121214",
-                paddingVertical: 14,
-                borderRadius: 9999,
-                alignItems: "center",
+                backgroundColor: "#FFFFFF",
+                borderTopLeftRadius: 32,
+                borderTopRightRadius: 32,
+                padding: 24,
+                paddingBottom: 36,
+                maxHeight: "90%",
               }}
             >
-              <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
-                {editingBudget ? "Update Slice" : "Allocate Slice"}
-              </Text>
-            </TouchableOpacity>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                <View>
+                  <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214" }}>
+                    {editingBudget ? "Edit Category Slice" : "Allocate Category Slice"}
+                  </Text>
+                  <Caption>Slice of your {formatCurrencyFromPaise(userDefinedCeilingPaise)} ceiling</Caption>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setSliceModalVisible(false)}
+                  style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: "#F7F7F5", alignItems: "center", justifyContent: "center" }}
+                >
+                  <X size={16} color="#121214" />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                automaticallyAdjustKeyboardInsets={true}
+              >
+                <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A", textTransform: "uppercase", marginBottom: 8 }}>
+                  Select Expense Category
+                </Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    {expenseCategories.map((c) => {
+                      const isSelected = selectedCatId === c.id;
+                      return (
+                        <TouchableOpacity
+                          key={c.id}
+                          onPress={() => setSelectedCatId(c.id)}
+                          style={{
+                            paddingVertical: 8,
+                            paddingHorizontal: 12,
+                            borderRadius: 14,
+                            backgroundColor: isSelected ? "#FFC83B" : "#F7F7F5",
+                            borderWidth: 1,
+                            borderColor: isSelected ? "#E8BC52" : "#EAEAE5",
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          {getCategoryIcon(c.icon)}
+                          <Text style={{ fontSize: 12, fontWeight: "800", color: "#121214" }}>
+                            {c.name}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </ScrollView>
+
+                <Input
+                  label="Allocated Amount (₹)"
+                  placeholder="e.g. 15000"
+                  keyboardType="numeric"
+                  value={limitStr}
+                  onChangeText={setLimitStr}
+                  helperText={`Unallocated buffer: ${formatCurrencyFromPaise(unallocatedBufferPaise)}`}
+                  containerClassName="mb-6"
+                />
+
+                <TouchableOpacity
+                  onPress={handleSaveCategorySlice}
+                  style={{
+                    backgroundColor: "#121214",
+                    paddingVertical: 14,
+                    borderRadius: 9999,
+                    alignItems: "center",
+                    marginBottom: 8,
+                  }}
+                >
+                  <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
+                    {editingBudget ? "Update Slice" : "Allocate Slice"}
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

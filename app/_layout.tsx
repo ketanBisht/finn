@@ -1,5 +1,13 @@
 import "../global.css";
 import React, { useEffect, useState } from "react";
+import { colorScheme } from "nativewind";
+
+// Force this app to always render in light mode regardless of the device's
+// system dark-mode setting. This is intentional — the app is designed with a
+// single warm light-sand aesthetic and must NEVER activate dark: Tailwind
+// variants. Without this call NativeWind 4.x reads the OS appearance and
+// makes text invisible on phones with system dark mode turned on.
+colorScheme.set("light");
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { QueryClientProvider } from "@tanstack/react-query";

@@ -119,6 +119,7 @@ export interface Debt {
   settled_paise: number;     // how much has been settled
   due_date?: string | null;
   notes?: string | null;
+  account_id?: string | null; // linked account for initial disbursement / settlement
   status: DebtStatus;
   created_at: string;
   updated_at: string;

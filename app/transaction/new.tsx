@@ -7,6 +7,7 @@ import {
   Alert,
   Modal,
   Platform as RNPlatform,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -197,12 +198,17 @@ export default function NewTransactionScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ padding: 20, paddingBottom: 60 }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        behavior={RNPlatform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
       >
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets={true}
+          showsVerticalScrollIndicator={false}
+        >
         {/* Type Toggle Tabs */}
         <View style={{ flexDirection: "row", padding: 5, backgroundColor: "#EAEAE5", borderRadius: 9999, marginBottom: 20 }}>
           <TouchableOpacity
@@ -684,6 +690,7 @@ export default function NewTransactionScreen() {
           </Text>
         </TouchableOpacity>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Add Custom Platform / Merchant Modal */}
       <Modal
@@ -692,47 +699,58 @@ export default function NewTransactionScreen() {
         transparent
         onRequestClose={() => setPlatformModalVisible(false)}
       >
-        <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-white rounded-t-[32px] p-6 pb-10">
-            <View className="flex-row items-center justify-between mb-4">
-              <View>
-                <Text className="text-lg font-black text-[#121214]">
-                  Add Custom Platform / Merchant
-                </Text>
-                <Caption>Add any app, website, or local store</Caption>
+        <KeyboardAvoidingView
+          behavior={RNPlatform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
+        >
+          <View className="flex-1 bg-black/50 justify-end">
+            <View className="bg-white rounded-t-[32px] p-6 pb-10">
+              <View className="flex-row items-center justify-between mb-4">
+                <View>
+                  <Text className="text-lg font-black text-[#121214]">
+                    Add Custom Platform / Merchant
+                  </Text>
+                  <Caption>Add any app, website, or local store</Caption>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setPlatformModalVisible(false)}
+                  className="w-8 h-8 rounded-full bg-[#F7F7F5] items-center justify-center"
+                >
+                  <X size={16} color="#121214" />
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity
-                onPress={() => setPlatformModalVisible(false)}
-                className="w-8 h-8 rounded-full bg-[#F7F7F5] items-center justify-center"
+
+              <ScrollView
+                keyboardShouldPersistTaps="handled"
+                automaticallyAdjustKeyboardInsets={true}
+                showsVerticalScrollIndicator={false}
               >
-                <X size={16} color="#121214" />
-              </TouchableOpacity>
+                <Input
+                  label="Merchant / Platform Name"
+                  placeholder="e.g. Zepto, Myntra, Local Bakery, Cult.fit"
+                  value={newPlatformInput}
+                  onChangeText={setNewPlatformInput}
+                  containerClassName="mb-6"
+                />
+
+                <TouchableOpacity
+                  onPress={handleAddNewCustomPlatform}
+                  style={{
+                    backgroundColor: "#121214",
+                    paddingVertical: 14,
+                    borderRadius: 9999,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
+                    Save & Select Platform
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
             </View>
-
-            <Input
-              label="Merchant / Platform Name"
-              placeholder="e.g. Zepto, Myntra, Local Bakery, Cult.fit"
-              value={newPlatformInput}
-              onChangeText={setNewPlatformInput}
-              containerClassName="mb-6"
-            />
-
-            <TouchableOpacity
-              onPress={handleAddNewCustomPlatform}
-              style={{
-                backgroundColor: "#121214",
-                paddingVertical: 14,
-                borderRadius: 9999,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
-                Save & Select Platform
-              </Text>
-            </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

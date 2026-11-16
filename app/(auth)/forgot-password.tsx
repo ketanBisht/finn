@@ -12,7 +12,7 @@ export default function ForgotPasswordScreen() {
   const [sent, setSent] = useState(false);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F7F7F5] dark:bg-[#0E0E10]">
+    <SafeAreaView className="flex-1 bg-[#F7F7F5]">
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingHorizontal: 24 }}

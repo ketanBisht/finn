@@ -10,6 +10,7 @@ import {
   Modal,
   TextInput,
   Switch,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -903,94 +904,106 @@ export default function SettingsScreen() {
         transparent
         onRequestClose={() => setProfileModalVisible(false)}
       >
-        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
-          <View
-            style={{
-              backgroundColor: "#FFFFFF",
-              borderTopLeftRadius: 32,
-              borderTopRightRadius: 32,
-              padding: 24,
-              paddingBottom: 36,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214" }}>
-                Edit Profile
-              </Text>
-              <TouchableOpacity
-                onPress={() => setProfileModalVisible(false)}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  backgroundColor: "#F7F7F5",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <X size={16} color="#121214" />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A", textTransform: "uppercase", marginBottom: 6 }}>
-              Full Name
-            </Text>
-            <TextInput
-              value={tempName}
-              onChangeText={setTempName}
-              placeholder="Your name"
-              placeholderTextColor="#A1A1AA"
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
+        >
+          <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
+            <View
               style={{
-                backgroundColor: "#F7F7F5",
-                borderRadius: 16,
-                padding: 14,
-                fontSize: 15,
-                fontWeight: "700",
-                color: "#121214",
-                borderWidth: 1,
-                borderColor: "#EAEAE5",
-                marginBottom: 16,
-              }}
-            />
-
-            <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A", textTransform: "uppercase", marginBottom: 6 }}>
-              Email Address
-            </Text>
-            <TextInput
-              value={tempEmail}
-              onChangeText={setTempEmail}
-              placeholder="name@domain.com"
-              placeholderTextColor="#A1A1AA"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              style={{
-                backgroundColor: "#F7F7F5",
-                borderRadius: 16,
-                padding: 14,
-                fontSize: 15,
-                fontWeight: "700",
-                color: "#121214",
-                borderWidth: 1,
-                borderColor: "#EAEAE5",
-                marginBottom: 24,
-              }}
-            />
-
-            <TouchableOpacity
-              onPress={handleSaveProfile}
-              style={{
-                backgroundColor: "#121214",
-                paddingVertical: 14,
-                borderRadius: 999,
-                alignItems: "center",
+                backgroundColor: "#FFFFFF",
+                borderTopLeftRadius: 32,
+                borderTopRightRadius: 32,
+                padding: 24,
+                paddingBottom: 36,
               }}
             >
-              <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
-                Save Profile
-              </Text>
-            </TouchableOpacity>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214" }}>
+                  Edit Profile
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setProfileModalVisible(false)}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: "#F7F7F5",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <X size={16} color="#121214" />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                automaticallyAdjustKeyboardInsets={true}
+              >
+                <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A", textTransform: "uppercase", marginBottom: 6 }}>
+                  Full Name
+                </Text>
+                <TextInput
+                  value={tempName}
+                  onChangeText={setTempName}
+                  placeholder="Your name"
+                  placeholderTextColor="#A1A1AA"
+                  style={{
+                    backgroundColor: "#F7F7F5",
+                    borderRadius: 16,
+                    padding: 14,
+                    fontSize: 15,
+                    fontWeight: "700",
+                    color: "#121214",
+                    borderWidth: 1,
+                    borderColor: "#EAEAE5",
+                    marginBottom: 16,
+                  }}
+                />
+
+                <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A", textTransform: "uppercase", marginBottom: 6 }}>
+                  Email Address
+                </Text>
+                <TextInput
+                  value={tempEmail}
+                  onChangeText={setTempEmail}
+                  placeholder="name@domain.com"
+                  placeholderTextColor="#A1A1AA"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  style={{
+                    backgroundColor: "#F7F7F5",
+                    borderRadius: 16,
+                    padding: 14,
+                    fontSize: 15,
+                    fontWeight: "700",
+                    color: "#121214",
+                    borderWidth: 1,
+                    borderColor: "#EAEAE5",
+                    marginBottom: 24,
+                  }}
+                />
+
+                <TouchableOpacity
+                  onPress={handleSaveProfile}
+                  style={{
+                    backgroundColor: "#121214",
+                    paddingVertical: 14,
+                    borderRadius: 999,
+                    alignItems: "center",
+                    marginBottom: 8,
+                  }}
+                >
+                  <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
+                    Save Profile
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Custom Platforms Modal */}
@@ -1091,83 +1104,96 @@ export default function SettingsScreen() {
           if (!isProcessingBackup) setBackupModalVisible(false);
         }}
       >
-        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
-          <View
-            style={{
-              backgroundColor: "#FFFFFF",
-              borderTopLeftRadius: 32,
-              borderTopRightRadius: 32,
-              padding: 24,
-              paddingBottom: 36,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-              <View>
-                <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214" }}>
-                  Create Encrypted Backup
-                </Text>
-                <Caption>Zero-Knowledge AES-256 Protection</Caption>
-              </View>
-              <TouchableOpacity
-                onPress={() => setBackupModalVisible(false)}
-                disabled={isProcessingBackup}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  backgroundColor: "#F7F7F5",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <X size={16} color="#121214" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={{ backgroundColor: "#F7F7F5", borderRadius: 16, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: "#EAEAE5" }}>
-              <Text style={{ fontSize: 12, color: "#71717A", lineHeight: 18 }}>
-                🔐 Your financial records will be encrypted with this passphrase before leaving your phone. You can safely save this file to Google Drive, iCloud, or email it to yourself.
-              </Text>
-            </View>
-
-            <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A", textTransform: "uppercase", marginBottom: 6 }}>
-              Set a Backup Passphrase *
-            </Text>
-            <TextInput
-              value={backupPassword}
-              onChangeText={setBackupPassword}
-              placeholder="Min 4 characters (e.g. MySecretPIN2026)"
-              placeholderTextColor="#A1A1AA"
-              secureTextEntry
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
+        >
+          <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
+            <View
               style={{
                 backgroundColor: "#FFFFFF",
-                borderRadius: 14,
-                padding: 14,
-                fontSize: 15,
-                fontWeight: "700",
-                color: "#121214",
-                borderWidth: 1,
-                borderColor: "#EAEAE5",
-                marginBottom: 20,
-              }}
-            />
-
-            <TouchableOpacity
-              onPress={handleCreateEncryptedBackup}
-              disabled={isProcessingBackup}
-              style={{
-                backgroundColor: "#121214",
-                paddingVertical: 14,
-                borderRadius: 999,
-                alignItems: "center",
+                borderTopLeftRadius: 32,
+                borderTopRightRadius: 32,
+                padding: 24,
+                paddingBottom: 36,
+                maxHeight: "90%",
               }}
             >
-              <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
-                {isProcessingBackup ? "Encrypting..." : "Encrypt & Share Backup"}
-              </Text>
-            </TouchableOpacity>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <View>
+                  <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214" }}>
+                    Create Encrypted Backup
+                  </Text>
+                  <Caption>Zero-Knowledge AES-256 Protection</Caption>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setBackupModalVisible(false)}
+                  disabled={isProcessingBackup}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: "#F7F7F5",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <X size={16} color="#121214" />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                automaticallyAdjustKeyboardInsets={true}
+              >
+                <View style={{ backgroundColor: "#F7F7F5", borderRadius: 16, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: "#EAEAE5" }}>
+                  <Text style={{ fontSize: 12, color: "#71717A", lineHeight: 18 }}>
+                    🔐 Your financial records will be encrypted with this passphrase before leaving your phone. You can safely save this file to Google Drive, iCloud, or email it to yourself.
+                  </Text>
+                </View>
+
+                <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A", textTransform: "uppercase", marginBottom: 6 }}>
+                  Set a Backup Passphrase *
+                </Text>
+                <TextInput
+                  value={backupPassword}
+                  onChangeText={setBackupPassword}
+                  placeholder="Min 4 characters (e.g. MySecretPIN2026)"
+                  placeholderTextColor="#A1A1AA"
+                  secureTextEntry
+                  style={{
+                    backgroundColor: "#FFFFFF",
+                    borderRadius: 14,
+                    padding: 14,
+                    fontSize: 15,
+                    fontWeight: "700",
+                    color: "#121214",
+                    borderWidth: 1,
+                    borderColor: "#EAEAE5",
+                    marginBottom: 20,
+                  }}
+                />
+
+                <TouchableOpacity
+                  onPress={handleCreateEncryptedBackup}
+                  disabled={isProcessingBackup}
+                  style={{
+                    backgroundColor: "#121214",
+                    paddingVertical: 14,
+                    borderRadius: 999,
+                    alignItems: "center",
+                    marginBottom: 8,
+                  }}
+                >
+                  <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
+                    {isProcessingBackup ? "Encrypting..." : "Encrypt & Share Backup"}
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ── Restore from Backup Modal ── */}
@@ -1179,83 +1205,96 @@ export default function SettingsScreen() {
           if (!isProcessingBackup) setRestoreModalVisible(false);
         }}
       >
-        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
-          <View
-            style={{
-              backgroundColor: "#FFFFFF",
-              borderTopLeftRadius: 32,
-              borderTopRightRadius: 32,
-              padding: 24,
-              paddingBottom: 36,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-              <View>
-                <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214" }}>
-                  Restore from Backup
-                </Text>
-                <Caption>Restore data from .wage.json</Caption>
-              </View>
-              <TouchableOpacity
-                onPress={() => setRestoreModalVisible(false)}
-                disabled={isProcessingBackup}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  backgroundColor: "#F7F7F5",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <X size={16} color="#121214" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={{ backgroundColor: "#FFFBEB", borderRadius: 16, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: "#FDE68A" }}>
-              <Text style={{ fontSize: 12, color: "#92400E", lineHeight: 18 }}>
-                ⚠️ Restoring will overwrite existing ledger data on this device with records from your backup file.
-              </Text>
-            </View>
-
-            <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A", textTransform: "uppercase", marginBottom: 6 }}>
-              Enter Backup Passphrase *
-            </Text>
-            <TextInput
-              value={restorePassword}
-              onChangeText={setRestorePassword}
-              placeholder="Passphrase used when creating backup"
-              placeholderTextColor="#A1A1AA"
-              secureTextEntry
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
+        >
+          <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
+            <View
               style={{
                 backgroundColor: "#FFFFFF",
-                borderRadius: 14,
-                padding: 14,
-                fontSize: 15,
-                fontWeight: "700",
-                color: "#121214",
-                borderWidth: 1,
-                borderColor: "#EAEAE5",
-                marginBottom: 20,
-              }}
-            />
-
-            <TouchableOpacity
-              onPress={handleRestoreBackup}
-              disabled={isProcessingBackup}
-              style={{
-                backgroundColor: "#B45309",
-                paddingVertical: 14,
-                borderRadius: 999,
-                alignItems: "center",
+                borderTopLeftRadius: 32,
+                borderTopRightRadius: 32,
+                padding: 24,
+                paddingBottom: 36,
+                maxHeight: "90%",
               }}
             >
-              <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
-                {isProcessingBackup ? "Decrypting & Restoring..." : "Choose File & Restore"}
-              </Text>
-            </TouchableOpacity>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <View>
+                  <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214" }}>
+                    Restore from Backup
+                  </Text>
+                  <Caption>Restore data from .wage.json</Caption>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setRestoreModalVisible(false)}
+                  disabled={isProcessingBackup}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: "#F7F7F5",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <X size={16} color="#121214" />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                automaticallyAdjustKeyboardInsets={true}
+              >
+                <View style={{ backgroundColor: "#FFFBEB", borderRadius: 16, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: "#FDE68A" }}>
+                  <Text style={{ fontSize: 12, color: "#92400E", lineHeight: 18 }}>
+                    ⚠️ Restoring will overwrite existing ledger data on this device with records from your backup file.
+                  </Text>
+                </View>
+
+                <Text style={{ fontSize: 11, fontWeight: "800", color: "#71717A", textTransform: "uppercase", marginBottom: 6 }}>
+                  Enter Backup Passphrase *
+                </Text>
+                <TextInput
+                  value={restorePassword}
+                  onChangeText={setRestorePassword}
+                  placeholder="Passphrase used when creating backup"
+                  placeholderTextColor="#A1A1AA"
+                  secureTextEntry
+                  style={{
+                    backgroundColor: "#FFFFFF",
+                    borderRadius: 14,
+                    padding: 14,
+                    fontSize: 15,
+                    fontWeight: "700",
+                    color: "#121214",
+                    borderWidth: 1,
+                    borderColor: "#EAEAE5",
+                    marginBottom: 20,
+                  }}
+                />
+
+                <TouchableOpacity
+                  onPress={handleRestoreBackup}
+                  disabled={isProcessingBackup}
+                  style={{
+                    backgroundColor: "#B45309",
+                    paddingVertical: 14,
+                    borderRadius: 999,
+                    alignItems: "center",
+                    marginBottom: 8,
+                  }}
+                >
+                  <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
+                    {isProcessingBackup ? "Decrypting & Restoring..." : "Choose File & Restore"}
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

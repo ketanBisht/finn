@@ -68,6 +68,11 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_subscriptions_next_date ON subscriptions(next_billing_date);
   `);
 
+  // Ensure debts table has account_id column
+  try {
+    await db.execAsync("ALTER TABLE debts ADD COLUMN account_id TEXT;");
+  } catch {}
+
   if (currentVersion >= CURRENT_DB_VERSION) return;
 
   // Version 0 → 1: Initial schema
@@ -164,6 +169,7 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase): Promise<void> {
         settled_paise INTEGER NOT NULL DEFAULT 0,
         due_date TEXT,
         notes TEXT,
+        account_id TEXT,
         status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','partially_settled','settled')),
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -710,6 +716,7 @@ function rowToDebt(row: Record<string, unknown>): Debt {
     settled_paise: row.settled_paise as number,
     due_date: (row.due_date as string | null) ?? undefined,
     notes: (row.notes as string | null) ?? undefined,
+    account_id: (row.account_id as string | null) ?? undefined,
     status: row.status as DebtStatus,
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,
@@ -727,8 +734,8 @@ export async function getAllDebts(db: SQLiteDatabase): Promise<Debt[]> {
 
 export async function insertDebt(db: SQLiteDatabase, debt: Debt): Promise<void> {
   await db.runAsync(
-    `INSERT INTO debts (id, user_id, direction, person_name, amount_paise, settled_paise, due_date, notes, status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+    `INSERT INTO debts (id, user_id, direction, person_name, amount_paise, settled_paise, due_date, notes, account_id, status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     debt.id,
     debt.user_id,
     debt.direction,
@@ -737,6 +744,7 @@ export async function insertDebt(db: SQLiteDatabase, debt: Debt): Promise<void> 
     debt.settled_paise,
     debt.due_date ?? null,
     debt.notes ?? null,
+    debt.account_id ?? null,
     debt.status,
     debt.created_at,
     debt.updated_at
@@ -766,6 +774,10 @@ export async function updateDebtDb(
   if (updates.due_date !== undefined) {
     sets.push("due_date = ?");
     values.push(updates.due_date ?? null);
+  }
+  if (updates.account_id !== undefined) {
+    sets.push("account_id = ?");
+    values.push(updates.account_id ?? null);
   }
   if (updates.person_name !== undefined) {
     sets.push("person_name = ?");
@@ -999,8 +1011,8 @@ export async function restoreDatabaseSnapshot(
     if (data.debts && Array.isArray(data.debts)) {
       for (const d of data.debts) {
         await db.runAsync(
-          `INSERT OR REPLACE INTO debts (id, user_id, direction, person_name, amount_paise, settled_paise, due_date, notes, status, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+          `INSERT OR REPLACE INTO debts (id, user_id, direction, person_name, amount_paise, settled_paise, due_date, notes, account_id, status, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
           [
             d.id,
             d.user_id || "local-user",
@@ -1010,6 +1022,7 @@ export async function restoreDatabaseSnapshot(
             d.settled_paise,
             d.due_date ?? null,
             d.notes ?? null,
+            d.account_id ?? null,
             d.status,
             d.created_at || new Date().toISOString(),
             d.updated_at || new Date().toISOString(),

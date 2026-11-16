@@ -8,6 +8,7 @@ import {
   Alert,
   TextInput,
   Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -256,7 +257,7 @@ export default function AccountsScreen() {
         >
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <View>
-              <Text style={{ fontSize: 11, fontWeight: "800", color: "#121214", opacity: 0.7, textTransform: "uppercase" }}>
+              <Text style={{ fontSize: 11, fontWeight: "800", color: "#121214", textTransform: "uppercase" }}>
                 Total Net Liquidity
               </Text>
               <Text style={{ fontSize: 26, fontWeight: "900", color: "#121214", marginTop: 2 }}>
@@ -474,97 +475,110 @@ export default function AccountsScreen() {
         transparent
         onRequestClose={() => setAccountModalVisible(false)}
       >
-        <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-white rounded-t-[32px] p-6 pb-10 max-h-[92%]">
-            <View className="flex-row items-center justify-between mb-4">
-              <View>
-                <Text className="text-lg font-black text-[#121214]">
-                  Add New Account or Wallet
-                </Text>
-                <Caption>Add any bank, UPI wallet, cash or investment</Caption>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
+        >
+          <View className="flex-1 bg-black/50 justify-end">
+            <View className="bg-white rounded-t-[32px] p-6 pb-10 max-h-[90%]">
+              <View className="flex-row items-center justify-between mb-4">
+                <View>
+                  <Text className="text-lg font-black text-[#121214]">
+                    Add New Account or Wallet
+                  </Text>
+                  <Caption>Add any bank, UPI wallet, cash or investment</Caption>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setAccountModalVisible(false)}
+                  className="w-8 h-8 rounded-full bg-[#F7F7F5] items-center justify-center"
+                >
+                  <X size={16} color="#121214" />
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity
-                onPress={() => setAccountModalVisible(false)}
-                className="w-8 h-8 rounded-full bg-[#F7F7F5] items-center justify-center"
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                automaticallyAdjustKeyboardInsets={true}
+                bounces={false}
               >
-                <X size={16} color="#121214" />
-              </TouchableOpacity>
+                <Input
+                  label="Account Name"
+                  placeholder="e.g. Salary Account, Everyday Bank, Travel Wallet"
+                  value={name}
+                  onChangeText={setName}
+                />
+
+                {/* Type Selector Pills */}
+                <Text className="text-[11px] font-bold text-[#71717A] uppercase tracking-wider mb-2">
+                  Account / Asset Type
+                </Text>
+                <View className="flex-row flex-wrap gap-2 mb-4">
+                  {[
+                    { id: "savings", label: "Savings Bank" },
+                    { id: "current", label: "Current / Biz" },
+                    { id: "wallet", label: "UPI Wallet" },
+                    { id: "cash", label: "Cash Wallet" },
+                    { id: "investment", label: "Investment" },
+                    { id: "credit_card", label: "Credit Card" },
+                  ].map((t) => {
+                    const isSelected = type === t.id;
+                    return (
+                      <TouchableOpacity
+                        key={t.id}
+                        onPress={() => setType(t.id as AccountType)}
+                        style={{
+                          paddingVertical: 8,
+                          paddingHorizontal: 13,
+                          borderRadius: 14,
+                          alignItems: "center",
+                          backgroundColor: isSelected ? "#FFC83B" : "#F7F7F5",
+                          borderWidth: 1,
+                          borderColor: isSelected ? "#E8BC52" : "#EAEAE5",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            fontWeight: "800",
+                            color: "#121214",
+                          }}
+                        >
+                          {t.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <Input
+                  label="Opening Balance (₹)"
+                  placeholder="0"
+                  keyboardType="numeric"
+                  value={openingBalanceStr}
+                  onChangeText={setOpeningBalanceStr}
+                  containerClassName="mb-6"
+                />
+
+                <TouchableOpacity
+                  onPress={handleCreateAccount}
+                  style={{
+                    backgroundColor: "#121214",
+                    paddingVertical: 14,
+                    borderRadius: 9999,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: 12,
+                  }}
+                >
+                  <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
+                    Save Account
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
             </View>
-
-            <Input
-              label="Account Name"
-              placeholder="e.g. Salary Account, Everyday Bank, Travel Wallet"
-              value={name}
-              onChangeText={setName}
-            />
-
-            {/* Type Selector Pills */}
-            <Text className="text-[11px] font-bold text-[#71717A] uppercase tracking-wider mb-2">
-              Account / Asset Type
-            </Text>
-            <View className="flex-row flex-wrap gap-2 mb-4">
-              {[
-                { id: "savings", label: "Savings Bank" },
-                { id: "current", label: "Current / Biz" },
-                { id: "wallet", label: "UPI Wallet" },
-                { id: "cash", label: "Cash Wallet" },
-                { id: "investment", label: "Investment" },
-                { id: "credit_card", label: "Credit Card" },
-              ].map((t) => {
-                const isSelected = type === t.id;
-                return (
-                  <TouchableOpacity
-                    key={t.id}
-                    onPress={() => setType(t.id as AccountType)}
-                    style={{
-                      paddingVertical: 8,
-                      paddingHorizontal: 13,
-                      borderRadius: 14,
-                      alignItems: "center",
-                      backgroundColor: isSelected ? "#FFC83B" : "#F7F7F5",
-                      borderWidth: 1,
-                      borderColor: isSelected ? "#E8BC52" : "#EAEAE5",
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 11,
-                        fontWeight: "800",
-                        color: "#121214",
-                      }}
-                    >
-                      {t.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            <Input
-              label="Opening Balance (₹)"
-              placeholder="0"
-              keyboardType="numeric"
-              value={openingBalanceStr}
-              onChangeText={setOpeningBalanceStr}
-              containerClassName="mb-6"
-            />
-
-            <TouchableOpacity
-              onPress={handleCreateAccount}
-              style={{
-                backgroundColor: "#121214",
-                paddingVertical: 14,
-                borderRadius: 9999,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
-                Save Account
-              </Text>
-            </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Edit Account Modal (Requested by user: edit bank account and manage) */}
@@ -574,115 +588,127 @@ export default function AccountsScreen() {
         transparent
         onRequestClose={() => setEditModalVisible(false)}
       >
-        <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-white rounded-t-[32px] p-6 pb-10 max-h-[92%]">
-            <View className="flex-row items-center justify-between mb-4">
-              <View>
-                <Text className="text-lg font-black text-[#121214]">
-                  Edit Account
-                </Text>
-                <Caption>Update name, adjust balance or remove account</Caption>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
+        >
+          <View className="flex-1 bg-black/50 justify-end">
+            <View className="bg-white rounded-t-[32px] p-6 pb-10 max-h-[90%]">
+              <View className="flex-row items-center justify-between mb-4">
+                <View>
+                  <Text className="text-lg font-black text-[#121214]">
+                    Edit Account
+                  </Text>
+                  <Caption>Update name, adjust balance or remove account</Caption>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setEditModalVisible(false)}
+                  className="w-8 h-8 rounded-full bg-[#F7F7F5] items-center justify-center"
+                >
+                  <X size={16} color="#121214" />
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity
-                onPress={() => setEditModalVisible(false)}
-                className="w-8 h-8 rounded-full bg-[#F7F7F5] items-center justify-center"
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                automaticallyAdjustKeyboardInsets={true}
+                bounces={false}
               >
-                <X size={16} color="#121214" />
-              </TouchableOpacity>
-            </View>
+                <Input
+                  label="Account Name"
+                  placeholder="Account name"
+                  value={editName}
+                  onChangeText={setEditName}
+                />
 
-            <Input
-              label="Account Name"
-              placeholder="Account name"
-              value={editName}
-              onChangeText={setEditName}
-            />
+                {/* Type Selector Pills */}
+                <Text className="text-[11px] font-bold text-[#71717A] uppercase tracking-wider mb-2">
+                  Account Type
+                </Text>
+                <View className="flex-row flex-wrap gap-2 mb-4">
+                  {[
+                    { id: "savings", label: "Savings Bank" },
+                    { id: "current", label: "Current / Biz" },
+                    { id: "wallet", label: "UPI Wallet" },
+                    { id: "cash", label: "Cash Wallet" },
+                    { id: "investment", label: "Investment" },
+                    { id: "credit_card", label: "Credit Card" },
+                  ].map((t) => {
+                    const isSelected = editType === t.id;
+                    return (
+                      <TouchableOpacity
+                        key={t.id}
+                        onPress={() => setEditType(t.id as AccountType)}
+                        style={{
+                          paddingVertical: 8,
+                          paddingHorizontal: 13,
+                          borderRadius: 14,
+                          alignItems: "center",
+                          backgroundColor: isSelected ? "#FFC83B" : "#F7F7F5",
+                          borderWidth: 1,
+                          borderColor: isSelected ? "#E8BC52" : "#EAEAE5",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            fontWeight: "800",
+                            color: "#121214",
+                          }}
+                        >
+                          {t.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
 
-            {/* Type Selector Pills */}
-            <Text className="text-[11px] font-bold text-[#71717A] uppercase tracking-wider mb-2">
-              Account Type
-            </Text>
-            <View className="flex-row flex-wrap gap-2 mb-4">
-              {[
-                { id: "savings", label: "Savings Bank" },
-                { id: "current", label: "Current / Biz" },
-                { id: "wallet", label: "UPI Wallet" },
-                { id: "cash", label: "Cash Wallet" },
-                { id: "investment", label: "Investment" },
-                { id: "credit_card", label: "Credit Card" },
-              ].map((t) => {
-                const isSelected = editType === t.id;
-                return (
+                <Input
+                  label="Adjust Current Balance (₹)"
+                  placeholder="0"
+                  keyboardType="numeric"
+                  value={editBalanceStr}
+                  onChangeText={setEditBalanceStr}
+                  helperText="Updates total balance immediately to match your bank statement"
+                  containerClassName="mb-6"
+                />
+
+                <View className="flex-row gap-3 mb-2">
                   <TouchableOpacity
-                    key={t.id}
-                    onPress={() => setEditType(t.id as AccountType)}
+                    onPress={handleDeleteAccount}
                     style={{
-                      paddingVertical: 8,
-                      paddingHorizontal: 13,
-                      borderRadius: 14,
+                      paddingVertical: 14,
+                      paddingHorizontal: 18,
+                      borderRadius: 9999,
+                      backgroundColor: "#FEECEB",
                       alignItems: "center",
-                      backgroundColor: isSelected ? "#FFC83B" : "#F7F7F5",
-                      borderWidth: 1,
-                      borderColor: isSelected ? "#E8BC52" : "#EAEAE5",
+                      justifyContent: "center",
                     }}
                   >
-                    <Text
-                      style={{
-                        fontSize: 11,
-                        fontWeight: "800",
-                        color: "#121214",
-                      }}
-                    >
-                      {t.label}
+                    <Trash2 size={18} color="#EF4444" />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={handleSaveEdit}
+                    style={{
+                      flex: 1,
+                      backgroundColor: "#121214",
+                      paddingVertical: 14,
+                      borderRadius: 9999,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
+                      Save Changes
                     </Text>
                   </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            <Input
-              label="Adjust Current Balance (₹)"
-              placeholder="0"
-              keyboardType="numeric"
-              value={editBalanceStr}
-              onChangeText={setEditBalanceStr}
-              helperText="Updates total balance immediately to match your bank statement"
-              containerClassName="mb-6"
-            />
-
-            <View className="flex-row gap-3">
-              <TouchableOpacity
-                onPress={handleDeleteAccount}
-                style={{
-                  paddingVertical: 14,
-                  paddingHorizontal: 18,
-                  borderRadius: 9999,
-                  backgroundColor: "#FEECEB",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Trash2 size={18} color="#EF4444" />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={handleSaveEdit}
-                style={{
-                  flex: 1,
-                  backgroundColor: "#121214",
-                  paddingVertical: 14,
-                  borderRadius: 9999,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
-                  Save Changes
-                </Text>
-              </TouchableOpacity>
+                </View>
+              </ScrollView>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Cash Denomination Counter Modal */}
@@ -692,136 +718,145 @@ export default function AccountsScreen() {
         transparent
         onRequestClose={() => setCashCounterVisible(false)}
       >
-        <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-white rounded-t-[32px] p-6 pb-10 max-h-[90%]">
-            <View className="flex-row items-center justify-between mb-4">
-              <View>
-                <Text className="text-lg font-black text-[#121214]">
-                  Cash Denomination Counter
-                </Text>
-                <Caption>Count physical Indian Rupee currency notes</Caption>
-              </View>
-              <TouchableOpacity
-                onPress={() => setCashCounterVisible(false)}
-                className="w-8 h-8 rounded-full bg-[#F7F7F5] items-center justify-center"
-              >
-                <X size={16} color="#121214" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Calculated Total Banner */}
-            <View
-              style={{
-                backgroundColor: "#F6CB68",
-                borderRadius: 20,
-                padding: 16,
-                marginBottom: 16,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                borderWidth: 1,
-                borderColor: "#E8BC52",
-              }}
-            >
-              <View>
-                <Text style={{ fontSize: 11, fontWeight: "800", color: "#121214", opacity: 0.7, textTransform: "uppercase" }}>
-                  Physical Cash Total
-                </Text>
-                <Text style={{ fontSize: 22, fontWeight: "900", color: "#121214", marginTop: 2 }}>
-                  ₹{totalCashCalculated.toLocaleString("en-IN")}
-                </Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
+        >
+          <View className="flex-1 bg-black/50 justify-end">
+            <View className="bg-white rounded-t-[32px] p-6 pb-10 max-h-[90%]">
+              <View className="flex-row items-center justify-between mb-4">
+                <View>
+                  <Text className="text-lg font-black text-[#121214]">
+                    Cash Denomination Counter
+                  </Text>
+                  <Caption>Count physical Indian Rupee currency notes</Caption>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setCashCounterVisible(false)}
+                  className="w-8 h-8 rounded-full bg-[#F7F7F5] items-center justify-center"
+                >
+                  <X size={16} color="#121214" />
+                </TouchableOpacity>
               </View>
 
-              <TouchableOpacity
-                onPress={resetCounter}
-                className="p-2 bg-white rounded-full shadow-sm"
+              {/* Calculated Total Banner */}
+              <View
+                style={{
+                  backgroundColor: "#F6CB68",
+                  borderRadius: 20,
+                  padding: 16,
+                  marginBottom: 16,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  borderWidth: 1,
+                  borderColor: "#E8BC52",
+                }}
               >
-                <RotateCcw size={16} color="#121214" />
-              </TouchableOpacity>
-            </View>
+                <View>
+                  <Text style={{ fontSize: 11, fontWeight: "800", color: "#121214", textTransform: "uppercase" }}>
+                    Physical Cash Total
+                  </Text>
+                  <Text style={{ fontSize: 22, fontWeight: "900", color: "#121214", marginTop: 2 }}>
+                    ₹{totalCashCalculated.toLocaleString("en-IN")}
+                  </Text>
+                </View>
 
-            <ScrollView className="mb-4">
-              {[
-                { denom: 500, val: notes500, set: setNotes500 },
-                { denom: 200, val: notes200, set: setNotes200 },
-                { denom: 100, val: notes100, set: setNotes100 },
-                { denom: 50, val: notes50, set: setNotes50 },
-                { denom: 20, val: notes20, set: setNotes20 },
-                { denom: 10, val: notes10, set: setNotes10 },
-              ].map(({ denom, val, set }) => {
-                const count = parseInt(val) || 0;
-                const subtotal = count * denom;
+                <TouchableOpacity
+                  onPress={resetCounter}
+                  className="p-2 bg-white rounded-full shadow-sm"
+                >
+                  <RotateCcw size={16} color="#121214" />
+                </TouchableOpacity>
+              </View>
 
-                return (
-                  <View
-                    key={denom}
-                    className="flex-row items-center justify-between py-2 border-b border-[#F0EFEA]"
-                  >
-                    <View className="flex-row items-center gap-2 w-20">
-                      <Text className="text-sm font-black text-[#121214]">
-                        ₹{denom}
+              <ScrollView
+                className="mb-4"
+                keyboardShouldPersistTaps="handled"
+                automaticallyAdjustKeyboardInsets={true}
+              >
+                {[
+                  { denom: 500, val: notes500, set: setNotes500 },
+                  { denom: 200, val: notes200, set: setNotes200 },
+                  { denom: 100, val: notes100, set: setNotes100 },
+                  { denom: 50, val: notes50, set: setNotes50 },
+                  { denom: 20, val: notes20, set: setNotes20 },
+                  { denom: 10, val: notes10, set: setNotes10 },
+                ].map(({ denom, val, set }) => {
+                  const count = parseInt(val) || 0;
+                  const subtotal = count * denom;
+
+                  return (
+                    <View
+                      key={denom}
+                      className="flex-row items-center justify-between py-2 border-b border-[#F0EFEA]"
+                    >
+                      <View className="flex-row items-center gap-2 w-20">
+                        <Text className="text-sm font-black text-[#121214]">
+                          ₹{denom}
+                        </Text>
+                      </View>
+
+                      {/* Stepper +/- */}
+                      <View className="flex-row items-center gap-2">
+                        <TouchableOpacity
+                          onPress={() => adjustNote(val, set, -1)}
+                          className="w-8 h-8 rounded-full bg-[#F7F7F5] items-center justify-center border border-[#EAEAE5]"
+                        >
+                          <Minus size={14} color="#121214" />
+                        </TouchableOpacity>
+
+                        <TextInput
+                          placeholder="0"
+                          keyboardType="numeric"
+                          value={val}
+                          onChangeText={set}
+                          placeholderTextColor="#A1A1AA"
+                          style={{
+                            width: 48,
+                            height: 36,
+                            textAlign: "center",
+                            fontSize: 14,
+                            fontWeight: "800",
+                            color: "#121214",
+                            backgroundColor: "#F7F7F5",
+                            borderRadius: 10,
+                          }}
+                        />
+
+                        <TouchableOpacity
+                          onPress={() => adjustNote(val, set, 1)}
+                          className="w-8 h-8 rounded-full bg-[#FFC83B] items-center justify-center border border-[#E8BC52]"
+                        >
+                          <Plus size={14} color="#121214" />
+                        </TouchableOpacity>
+                      </View>
+
+                      <Text className="text-sm font-black text-[#121214] w-20 text-right">
+                        ₹{subtotal.toLocaleString("en-IN")}
                       </Text>
                     </View>
+                  );
+                })}
+              </ScrollView>
 
-                    {/* Stepper +/- */}
-                    <View className="flex-row items-center gap-2">
-                      <TouchableOpacity
-                        onPress={() => adjustNote(val, set, -1)}
-                        className="w-8 h-8 rounded-full bg-[#F7F7F5] items-center justify-center border border-[#EAEAE5]"
-                      >
-                        <Minus size={14} color="#121214" />
-                      </TouchableOpacity>
-
-                      <TextInput
-                        placeholder="0"
-                        keyboardType="numeric"
-                        value={val}
-                        onChangeText={set}
-                        placeholderTextColor="#A1A1AA"
-                        style={{
-                          width: 48,
-                          height: 36,
-                          textAlign: "center",
-                          fontSize: 14,
-                          fontWeight: "800",
-                          color: "#121214",
-                          backgroundColor: "#F7F7F5",
-                          borderRadius: 10,
-                        }}
-                      />
-
-                      <TouchableOpacity
-                        onPress={() => adjustNote(val, set, 1)}
-                        className="w-8 h-8 rounded-full bg-[#FFC83B] items-center justify-center border border-[#E8BC52]"
-                      >
-                        <Plus size={14} color="#121214" />
-                      </TouchableOpacity>
-                    </View>
-
-                    <Text className="text-sm font-black text-[#121214] w-20 text-right">
-                      ₹{subtotal.toLocaleString("en-IN")}
-                    </Text>
-                  </View>
-                );
-              })}
-            </ScrollView>
-
-            <TouchableOpacity
-              onPress={handleSyncCashAccount}
-              style={{
-                backgroundColor: "#121214",
-                paddingVertical: 14,
-                borderRadius: 9999,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
-                Reconcile & Update Cash Account
-              </Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSyncCashAccount}
+                style={{
+                  backgroundColor: "#121214",
+                  paddingVertical: 14,
+                  borderRadius: 9999,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
+                  Reconcile & Update Cash Account
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

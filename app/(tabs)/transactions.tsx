@@ -8,6 +8,7 @@ import {
   Platform,
   Modal,
   TextInput,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -470,76 +471,89 @@ export default function TransactionsScreen() {
         transparent
         onRequestClose={() => setEditingTx(null)}
       >
-        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
-          <View
-            style={{
-              backgroundColor: "#FFFFFF",
-              borderTopLeftRadius: 32,
-              borderTopRightRadius: 32,
-              padding: 24,
-              paddingBottom: 36,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <View>
-                <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214" }}>
-                  Edit Transaction
-                </Text>
-                <Caption>Update description, amount or notes</Caption>
-              </View>
-              <TouchableOpacity
-                onPress={() => setEditingTx(null)}
-                style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: "#F7F7F5", alignItems: "center", justifyContent: "center" }}
-              >
-                <X size={16} color="#121214" />
-              </TouchableOpacity>
-            </View>
-
-            <Input
-              label="Description"
-              placeholder="e.g. Swiggy Lunch, Uber ride"
-              value={editDesc}
-              onChangeText={setEditDesc}
-            />
-
-            <Input
-              label="Amount (₹)"
-              placeholder="0"
-              keyboardType="numeric"
-              value={editAmountStr}
-              onChangeText={setEditAmountStr}
-            />
-
-            <Input
-              label="Platform / Merchant (optional)"
-              placeholder="e.g. Swiggy, Amazon, Uber"
-              value={editPlatform}
-              onChangeText={setEditPlatform}
-            />
-
-            <Input
-              label="Notes (optional)"
-              placeholder="e.g. Team lunch"
-              value={editNotes}
-              onChangeText={setEditNotes}
-              containerClassName="mb-6"
-            />
-
-            <TouchableOpacity
-              onPress={handleSaveEdit}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
+        >
+          <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
+            <View
               style={{
-                backgroundColor: "#121214",
-                paddingVertical: 14,
-                borderRadius: 999,
-                alignItems: "center",
+                backgroundColor: "#FFFFFF",
+                borderTopLeftRadius: 32,
+                borderTopRightRadius: 32,
+                padding: 24,
+                paddingBottom: 36,
+                maxHeight: "90%",
               }}
             >
-              <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
-                Update Transaction
-              </Text>
-            </TouchableOpacity>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                <View>
+                  <Text style={{ fontSize: 18, fontWeight: "900", color: "#121214" }}>
+                    Edit Transaction
+                  </Text>
+                  <Caption>Update description, amount or notes</Caption>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setEditingTx(null)}
+                  style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: "#F7F7F5", alignItems: "center", justifyContent: "center" }}
+                >
+                  <X size={16} color="#121214" />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                automaticallyAdjustKeyboardInsets={true}
+              >
+                <Input
+                  label="Description"
+                  placeholder="e.g. Swiggy Lunch, Uber ride"
+                  value={editDesc}
+                  onChangeText={setEditDesc}
+                />
+
+                <Input
+                  label="Amount (₹)"
+                  placeholder="0"
+                  keyboardType="numeric"
+                  value={editAmountStr}
+                  onChangeText={setEditAmountStr}
+                />
+
+                <Input
+                  label="Platform / Merchant (optional)"
+                  placeholder="e.g. Swiggy, Amazon, Uber"
+                  value={editPlatform}
+                  onChangeText={setEditPlatform}
+                />
+
+                <Input
+                  label="Notes (optional)"
+                  placeholder="e.g. Team lunch"
+                  value={editNotes}
+                  onChangeText={setEditNotes}
+                  containerClassName="mb-6"
+                />
+
+                <TouchableOpacity
+                  onPress={handleSaveEdit}
+                  style={{
+                    backgroundColor: "#121214",
+                    paddingVertical: 14,
+                    borderRadius: 999,
+                    alignItems: "center",
+                    marginBottom: 8,
+                  }}
+                >
+                  <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
+                    Update Transaction
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

@@ -388,7 +388,12 @@ export default function SubscriptionsScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 50 }} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              contentContainerStyle={{ padding: 20, paddingBottom: 60 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              automaticallyAdjustKeyboardInsets={true}
+            >
               {/* Custom Name */}
               <View style={styles.field}>
                 <Text style={styles.fieldLabel}>Subscription / Obligation Name *</Text>
